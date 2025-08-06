@@ -1,12 +1,15 @@
 import * as Parser from "tree-sitter";
 import * as LiquidTreeSitter from "tree-sitter-liquid";
+import { Logger } from "./logger";
 
 export class TreeSitterLiquidProvider {
   private parser: Parser;
   private language: Parser.Language;
   private isInitialized = false;
+  private logger: Logger;
 
   constructor() {
+    this.logger = new Logger("TreeSitterLiquidProvider");
     try {
       this.parser = new Parser();
       this.language = LiquidTreeSitter as Parser.Language;
@@ -99,11 +102,17 @@ export class TreeSitterLiquidProvider {
     column: number,
   ): string | null {
     const node = tree.rootNode.descendantForPosition({ row, column });
+    this.logger.debug(
+      `Node at position ${row}:${column} - type: ${node.type}, text: "${node.text}"`,
+    );
 
     // Check if we're on a translation call
     if (!this.isTranslationCall(node)) {
+      this.logger.debug(`Node is not a translation call`);
       return null;
     }
+
+    this.logger.debug(`Node is a translation call`);
 
     // Find the translation_expression node
     let current: Parser.SyntaxNode | null = node;
@@ -115,8 +124,13 @@ export class TreeSitterLiquidProvider {
 
     // Look for the key field
     const keyNode = current.childForFieldName("key");
+    this.logger.debug(
+      `Key node: ${keyNode ? `type: ${keyNode.type}, text: "${keyNode.text}"` : "null"}`,
+    );
     if (keyNode && keyNode.type === "string") {
-      return this.extractTranslationKey(keyNode);
+      const extractedKey = this.extractTranslationKey(keyNode);
+      this.logger.debug(`Extracted translation key: "${extractedKey}"`);
+      return extractedKey;
     }
 
     return null;
@@ -127,20 +141,28 @@ export class TreeSitterLiquidProvider {
     tree: Parser.Tree,
     translationKey: string,
   ): Parser.SyntaxNode | null {
+    this.logger.debug(
+      `Searching for translation definition: "${translationKey}"`,
+    );
     const definitions = this.findTranslationDefinitions(tree);
+    this.logger.debug(
+      `Found ${definitions.length} translation definitions in tree`,
+    );
 
     for (const match of definitions) {
       for (const capture of match.captures) {
-        if (
-          capture.name === "translation_key" &&
-          this.extractTranslationKey(capture.node) === translationKey
-        ) {
-          // Return the parent translation_statement node
-          let parent = capture.node.parent;
-          while (parent && parent.type !== "translation_statement") {
-            parent = parent.parent;
+        if (capture.name === "translation_key") {
+          const captureKey = this.extractTranslationKey(capture.node);
+          this.logger.debug(`Found definition key: "${captureKey}"`);
+          if (captureKey === translationKey) {
+            this.logger.debug(`Match found for key: "${translationKey}"`);
+            // Return the parent translation_statement node
+            let parent = capture.node.parent;
+            while (parent && parent.type !== "translation_statement") {
+              parent = parent.parent;
+            }
+            return parent;
           }
-          return parent;
         }
       }
     }

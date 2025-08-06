@@ -25,6 +25,14 @@ jest.mock("../src/treeSitterLiquidProvider", () => ({
   })),
 }));
 
+// Mock the RelatedFilesProvider
+jest.mock("../src/relatedFilesProvider", () => ({
+  RelatedFilesProvider: jest.fn().mockImplementation(() => ({
+    getAllTemplateFiles: jest.fn().mockReturnValue(["/test.liquid"]),
+    getMainTemplateFile: jest.fn().mockReturnValue("/test.liquid"),
+  })),
+}));
+
 describe("HoverHandler", () => {
   let mockParams: HoverParams;
   let mockFs: jest.Mocked<typeof fs>;

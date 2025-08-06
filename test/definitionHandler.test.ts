@@ -21,6 +21,17 @@ jest.mock("../src/treeSitterLiquidProvider", () => ({
   })),
 }));
 
+// Mock the RelatedFilesProvider
+const mockGetAllTemplateFiles = jest.fn();
+const mockGetMainTemplateFile = jest.fn();
+
+jest.mock("../src/relatedFilesProvider", () => ({
+  RelatedFilesProvider: jest.fn().mockImplementation(() => ({
+    getAllTemplateFiles: mockGetAllTemplateFiles,
+    getMainTemplateFile: mockGetMainTemplateFile,
+  })),
+}));
+
 describe("DefinitionHandler", () => {
   let mockParams: DefinitionParams;
   let mockFs: jest.Mocked<typeof fs>;
@@ -57,6 +68,11 @@ describe("DefinitionHandler", () => {
     mockGetTranslationKeyAtPosition.mockReturnValue(null);
     mockFindTranslationDefinitionByKey.mockReturnValue(null);
     mockGetTranslationKeyLocation.mockReturnValue(null);
+
+    // Reset RelatedFilesProvider mocks
+    mockGetAllTemplateFiles.mockReturnValue(["/test.liquid"]);
+    mockGetMainTemplateFile.mockReturnValue("/test.liquid");
+    mockFs.existsSync = jest.fn().mockReturnValue(true);
   });
 
   afterEach(() => {

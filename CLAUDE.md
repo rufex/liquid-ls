@@ -102,11 +102,28 @@ claude/
 ALWAYS write specs for your code, as this will help us ensure the language server works correctly and efficiently.
 ALWAYS run your tests before deciding if your code is ready or not. Tests must always pass.
 ALWAYS run the linter (`npm run lint`) and formatter (`npm run format`) before completing any task.
+ALWAYS compile TypeScript (`npm run build`) after making any code changes to ensure compilation succeeds.
 STORE tests in the `test` directory, and use the `jest` testing framework to write your tests.
 SUMMARIZE any relevant information that can help yourself in future iterations of this project, or help other developers understand the codebase. Store this information in `claude/` directory.
 ALWAYS read the documentation you have in `claude/` directory before starting to work on the codebase, as it contains important information about the project and its structure.
 DEFINE types following the TypeScript conventions and the official LSP specifications.
 ALWAYS write test, run tests, run linter, run formatter, compile typescript before committing or submitting code.
+
+### Parsing Constraints
+
+**CRITICAL**: This language server uses TreeSitter for ALL parsing operations. NEVER use regular expressions or string manipulation for parsing Liquid syntax. All parsing must go through the TreeSitter provider using proper queries and node traversal. This ensures:
+
+- Accurate syntax tree representation
+- Proper handling of nested structures
+- Consistent parsing behavior
+- Better error handling and recovery
+
+When implementing new parsing features:
+
+1. Use TreeSitter queries with proper node type matching
+2. Traverse the syntax tree using node relationships (parent, children, siblings)
+3. Extract text content only from identified nodes, never from raw strings
+4. Test parsing with various edge cases and malformed input
 
 ## Testing
 
