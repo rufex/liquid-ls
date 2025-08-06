@@ -21,14 +21,12 @@ jest.mock("../src/treeSitterLiquidProvider", () => ({
   })),
 }));
 
-// Mock the RelatedFilesProvider
-const mockGetAllTemplateFiles = jest.fn();
-const mockGetMainTemplateFile = jest.fn();
+// Mock the ScopeAwareProvider
+const mockFindScopedTranslationDefinition = jest.fn();
 
-jest.mock("../src/relatedFilesProvider", () => ({
-  RelatedFilesProvider: jest.fn().mockImplementation(() => ({
-    getAllTemplateFiles: mockGetAllTemplateFiles,
-    getMainTemplateFile: mockGetMainTemplateFile,
+jest.mock("../src/scopeAwareProvider", () => ({
+  ScopeAwareProvider: jest.fn().mockImplementation(() => ({
+    findScopedTranslationDefinition: mockFindScopedTranslationDefinition,
   })),
 }));
 
@@ -69,10 +67,8 @@ describe("DefinitionHandler", () => {
     mockFindTranslationDefinitionByKey.mockReturnValue(null);
     mockGetTranslationKeyLocation.mockReturnValue(null);
 
-    // Reset RelatedFilesProvider mocks
-    mockGetAllTemplateFiles.mockReturnValue(["/test.liquid"]);
-    mockGetMainTemplateFile.mockReturnValue("/test.liquid");
-    mockFs.existsSync = jest.fn().mockReturnValue(true);
+    // Reset ScopeAwareProvider mocks
+    mockFindScopedTranslationDefinition.mockReturnValue(null);
   });
 
   afterEach(() => {
@@ -125,7 +121,7 @@ describe("DefinitionHandler", () => {
       mockFs.readFileSync = jest.fn().mockReturnValue(content);
       mockParseText.mockReturnValue({ rootNode: {} });
       mockGetTranslationKeyAtPosition.mockReturnValue("missing_key");
-      mockFindTranslationDefinitionByKey.mockReturnValue(null);
+      mockFindScopedTranslationDefinition.mockReturnValue(null);
 
       const handler = new DefinitionHandler(mockParams);
       const result = await handler.handleDefinitionRequest();
@@ -138,9 +134,13 @@ describe("DefinitionHandler", () => {
       mockFs.readFileSync = jest.fn().mockReturnValue(content);
       mockParseText.mockReturnValue({ rootNode: {} });
       mockGetTranslationKeyAtPosition.mockReturnValue("test_key");
-      mockFindTranslationDefinitionByKey.mockReturnValue({
-        startPosition: { row: 1, column: 5 },
-        endPosition: { row: 1, column: 15 },
+      mockFindScopedTranslationDefinition.mockReturnValue({
+        definition: {
+          startPosition: { row: 1, column: 5 },
+          endPosition: { row: 1, column: 15 },
+        },
+        filePath: "/test.liquid",
+        content: "test content",
       });
       mockGetTranslationKeyLocation.mockReturnValue({
         startPosition: { row: 1, column: 6 },
@@ -163,9 +163,13 @@ describe("DefinitionHandler", () => {
       mockFs.readFileSync = jest.fn().mockReturnValue(content);
       mockParseText.mockReturnValue({ rootNode: {} });
       mockGetTranslationKeyAtPosition.mockReturnValue("test_key");
-      mockFindTranslationDefinitionByKey.mockReturnValue({
-        startPosition: { row: 1, column: 5 },
-        endPosition: { row: 1, column: 15 },
+      mockFindScopedTranslationDefinition.mockReturnValue({
+        definition: {
+          startPosition: { row: 1, column: 5 },
+          endPosition: { row: 1, column: 15 },
+        },
+        filePath: "/test.liquid",
+        content: "test content",
       });
       mockGetTranslationKeyLocation.mockReturnValue(null);
 

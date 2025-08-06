@@ -17,9 +17,11 @@ The language server is implemented in TypeScript and provides:
 
 1. **LiquidLanguageServer** (`src/server.ts`): Main LSP server implementation
 2. **TreeSitterLiquidProvider** (`src/treeSitterLiquidProvider.ts`): TreeSitter integration for parsing Liquid templates
-3. **HoverHandler** (`src/hoverHandler.ts`): Handles LSP hover requests
-4. **DefinitionHandler** (`src/definitionHandler.ts`): Handles LSP go-to-definition requests
-5. **Logger** (`src/logger.ts`): Centralized logging system
+3. **ScopeAwareProvider** (`src/scopeAwareProvider.ts`): Scope-aware translation lookup with include statement processing
+4. **HoverHandler** (`src/hoverHandler.ts`): Handles LSP hover requests
+5. **DefinitionHandler** (`src/definitionHandler.ts`): Handles LSP go-to-definition requests
+6. **RelatedFilesProvider** (`src/relatedFilesProvider.ts`): Template file discovery and config.json parsing
+7. **Logger** (`src/logger.ts`): Centralized logging system
 
 ### Dependencies
 
@@ -41,10 +43,15 @@ The language server is implemented in TypeScript and provides:
 
 ✅ **Translation Hover Information**: Shows all locale translations when hovering over `{% t 'key' %}` calls
 ✅ **Translation Go-to-Definition**: Navigate from translation calls to their definitions
+✅ **Scope-Aware Translation Lookup**: Only shows translations that are "in scope" at cursor position
+✅ **Cross-File Translation Search**: Searches across all related template files (main + text_parts)
+✅ **Include Statement Processing**: Handles `{% include "parts/name" %}` statements and nested includes
 ✅ **Multi-locale Support**: Displays all available language translations in formatted lists
 ✅ **Precise Navigation**: Jumps to exact translation key location in definitions
 ✅ **Empty Translation Filtering**: Excludes empty locale values from hover information
-✅ **Comprehensive Testing**: Full test coverage for all components
+✅ **Dynamic Template Structure**: Supports any template directory name with flexible config.json format
+✅ **Parts/ Directory Mapping**: Maps `{% include "parts/name" %}` to `text_parts/name.liquid`
+✅ **Comprehensive Testing**: Full test coverage for all components (1000+ lines of tests)
 ✅ **Error Handling**: Graceful handling of parsing errors and missing definitions
 
 ## File Structure
@@ -54,15 +61,19 @@ src/
 ├── index.ts                     # Entry point and process management
 ├── server.ts                    # Main LSP server implementation
 ├── treeSitterLiquidProvider.ts  # TreeSitter parsing and querying
+├── scopeAwareProvider.ts        # Scope-aware translation lookup with include processing
 ├── hoverHandler.ts              # Hover request handling
 ├── definitionHandler.ts         # Definition request handling
+├── relatedFilesProvider.ts      # Template file discovery and config.json parsing
 └── logger.ts                    # Logging utilities
 
 test/
 ├── server.test.ts               # Server functionality tests
 ├── treeSitterLiquidProvider.test.ts # TreeSitter provider tests
+├── scopeAwareProvider.test.ts   # Scope-aware provider tests
 ├── hoverHandler.test.ts         # Hover handler tests
 ├── definitionHandler.test.ts    # Definition handler tests
+├── relatedFilesProvider.test.ts # Related files provider tests
 └── logger.test.ts               # Logger tests
 
 claude/
@@ -70,6 +81,30 @@ claude/
 ```
 
 ## Usage Examples
+
+### Template Structure
+
+```
+template_name/
+├── main.liquid                  # Main template file
+├── config.json                  # Template configuration
+└── text_parts/                  # Text parts directory
+    ├── part_1.liquid
+    ├── part_2.liquid
+    └── translations.liquid
+```
+
+### Config.json Format
+
+```json
+{
+  "text_parts": {
+    "part_1": "text_parts/part_1.liquid",
+    "part_2": "text_parts/part_2.liquid",
+    "translations": "text_parts/translations.liquid"
+  }
+}
+```
 
 ### Translation Call
 
@@ -81,6 +116,22 @@ claude/
 
 ```liquid
 {% t= 'welcome_message' default:'Welcome to our site' nl:'Welkom op onze site' fr:'Bienvenue sur notre site' %}
+```
+
+### Include Statements
+
+```liquid
+{% include "parts/translations" %}  <!-- Maps to text_parts/translations.liquid -->
+{% include "parts/utilities" %}     <!-- Maps to text_parts/utilities.liquid -->
+```
+
+### Scope-Aware Behavior
+
+```liquid
+{% include "parts/translations" %}  ← Line 0: includes translations.liquid
+{% t= "local_def" default:"Local" %} ← Line 1: local definition
+{% t "example_translation" %}        ← Line 2: CURSOR HERE (finds both)
+{% t= "late_def" default:"Late" %}   ← Line 3: not in scope!
 ```
 
 ## Development Workflow
@@ -127,19 +178,46 @@ When implementing new parsing features:
 
 ## Testing
 
-The project has comprehensive test coverage with 900+ lines of tests across all components:
+The project has comprehensive test coverage with 1000+ lines of tests across all components:
 
-- **Server Tests** (144 lines): LSP server initialization and request handling
-- **TreeSitter Provider Tests** (289 lines): Parsing, querying, and translation extraction
-- **Hover Handler Tests** (200 lines): Hover request processing and response formatting
-- **Definition Handler Tests** (177 lines): Go-to-definition functionality
-- **Logger Tests** (93 lines): Logging system functionality
+- **Server Tests**: LSP server initialization and request handling
+- **TreeSitter Provider Tests**: Parsing, querying, and translation extraction
+- **Scope-Aware Provider Tests**: Include processing, nested includes, and scope-aware lookup
+- **Hover Handler Tests**: Hover request processing and response formatting
+- **Definition Handler Tests**: Go-to-definition functionality
+- **Related Files Provider Tests**: Config.json parsing and file discovery
+- **Logger Tests**: Logging system functionality
+
+## Scope-Aware Translation Lookup
+
+The language server implements sophisticated scope-aware translation lookup that respects Liquid execution flow:
+
+### How It Works
+
+1. **Include Statement Parsing**: Detects `{% include "parts/name" %}` statements using TreeSitter
+2. **Execution Order**: Processes includes in the order they appear in the template
+3. **Nested Includes**: Recursively processes includes within included files
+4. **Line-Based Scope**: Only considers translations defined before the cursor position
+5. **Path Resolution**: Maps `parts/` includes to `text_parts/` directory
+
+### Scope Rules
+
+- **Current File**: Searches lines 1 to cursor position
+- **Included Files**: Searches all lines in files included before cursor position
+- **Priority**: Current file definitions override included file definitions
+- **Circular Protection**: Prevents infinite loops in circular includes
+
+### Template Structure Support
+
+- **Dynamic Directory Names**: Works with any template directory name
+- **Flexible Config Format**: Supports both array and object formats for text_parts
+- **Future-Ready**: Prepared for shared_parts implementation
 
 ## Future Enhancements
 
 Potential improvements identified:
 
-1. **Cross-file translation lookup**: Search definitions in separate translation files
+1. **Shared Parts Support**: Add support for shared_parts directory and config
 2. **Translation validation**: Warn about missing translations
 3. **Auto-completion**: Suggest available translation keys
 4. **Rename refactoring**: Rename translation keys across files

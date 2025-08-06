@@ -1,5 +1,5 @@
 import { TreeSitterLiquidProvider } from "./treeSitterLiquidProvider";
-import { RelatedFilesProvider } from "./relatedFilesProvider";
+import { ScopeAwareProvider } from "./scopeAwareProvider";
 import { Logger } from "./logger";
 import { DefinitionParams, Location, Range } from "vscode-languageserver/node";
 import { URI } from "vscode-uri";
@@ -11,14 +11,14 @@ export class DefinitionHandler {
   private position: DefinitionParams["position"];
   private logger: Logger;
   private provider: TreeSitterLiquidProvider;
-  private relatedFilesProvider: RelatedFilesProvider;
+  private scopeAwareProvider: ScopeAwareProvider;
 
   constructor(params: DefinitionParams) {
     this.textDocumentUri = params.textDocument.uri;
     this.position = params.position;
     this.logger = new Logger("DefinitionHandler");
     this.provider = new TreeSitterLiquidProvider();
-    this.relatedFilesProvider = new RelatedFilesProvider();
+    this.scopeAwareProvider = new ScopeAwareProvider();
 
     this.logger.logRequest("DefinitionHandler initialized", {
       uri: this.textDocumentUri,
@@ -62,8 +62,13 @@ export class DefinitionHandler {
 
     this.logger.debug(`Found translation key: ${translationKey}`);
 
-    // Search for translation definition across all related files
-    const definitionResult = this.findTranslationInRelatedFiles(translationKey);
+    // Search for translation definition using scope-aware lookup
+    const definitionResult =
+      this.scopeAwareProvider.findScopedTranslationDefinition(
+        this.textDocumentUri,
+        translationKey,
+        this.position.line,
+      );
 
     if (!definitionResult) {
       this.logger.debug(
@@ -123,62 +128,5 @@ export class DefinitionHandler {
       this.logger.error(`Error calculating definition location: ${error}`);
       return null;
     }
-  }
-
-  private findTranslationInRelatedFiles(
-    translationKey: string,
-  ): { definition: Parser.SyntaxNode; filePath: string } | null {
-    // First, find the main template file (in case we're starting from a text part)
-    const mainTemplateFile = this.relatedFilesProvider.getMainTemplateFile(
-      this.textDocumentUri,
-    );
-    if (!mainTemplateFile) {
-      this.logger.error("Could not determine main template file");
-      return null;
-    }
-
-    // Get all related files for this template using the main template file
-    const mainTemplateUri = `file://${mainTemplateFile}`;
-    const allFiles =
-      this.relatedFilesProvider.getAllTemplateFiles(mainTemplateUri);
-
-    this.logger.debug(
-      `Searching for translation '${translationKey}' in ${allFiles.length} files`,
-    );
-
-    for (const filePath of allFiles) {
-      try {
-        if (!fs.existsSync(filePath)) {
-          this.logger.warn(`File not found: ${filePath}`);
-          continue;
-        }
-
-        const fileContent = fs.readFileSync(filePath, "utf8");
-        this.logger.debug(`File content (${filePath}): "${fileContent}"`);
-
-        const parsedTree = this.provider.parseText(fileContent);
-
-        if (!parsedTree) {
-          this.logger.warn(`Failed to parse file: ${filePath}`);
-          continue;
-        }
-
-        this.logger.debug(`Successfully parsed file: ${filePath}`);
-
-        const definition = this.provider.findTranslationDefinitionByKey(
-          parsedTree,
-          translationKey,
-        );
-
-        if (definition) {
-          this.logger.debug(`Found translation definition in: ${filePath}`);
-          return { definition, filePath };
-        }
-      } catch (error) {
-        this.logger.error(`Error processing file ${filePath}: ${error}`);
-      }
-    }
-
-    return null;
   }
 }

@@ -1,5 +1,5 @@
 import { TreeSitterLiquidProvider } from "./treeSitterLiquidProvider";
-import { RelatedFilesProvider } from "./relatedFilesProvider";
+import { ScopeAwareProvider } from "./scopeAwareProvider";
 import { Logger } from "./logger";
 import { HoverParams } from "vscode-languageserver/node";
 import { URI } from "vscode-uri";
@@ -10,14 +10,14 @@ export class HoverHandler {
   private position: HoverParams["position"];
   private logger: Logger;
   private provider: TreeSitterLiquidProvider;
-  private relatedFilesProvider: RelatedFilesProvider;
+  private scopeAwareProvider: ScopeAwareProvider;
 
   constructor(params: HoverParams) {
     this.textDocumentUri = params.textDocument.uri;
     this.position = params.position;
     this.logger = new Logger("HoverHandler");
     this.provider = new TreeSitterLiquidProvider();
-    this.relatedFilesProvider = new RelatedFilesProvider();
+    this.scopeAwareProvider = new ScopeAwareProvider();
 
     this.logger.logRequest("HoverHandler initialized", {
       uri: this.textDocumentUri,
@@ -26,15 +26,10 @@ export class HoverHandler {
   }
 
   public async handleHoverRequest(): Promise<string | null> {
-    console.log("=== HOVER REQUEST RECEIVED ===");
-    console.log("URI:", this.textDocumentUri);
-    console.log("Position:", this.position);
-
     this.logger.logRequest("handleHoverRequest", {
       uri: this.textDocumentUri,
       position: this.position,
     });
-
     // open document from file system or workspace
     const filePath = URI.parse(this.textDocumentUri).fsPath;
     const document = fs.readFileSync(filePath, "utf8");
@@ -79,14 +74,19 @@ export class HoverHandler {
     if (translationKey) {
       this.logger.debug(`Found translation key: ${translationKey}`);
 
-      // Search for translation definition across all related files
-      const definition = this.findTranslationInRelatedFiles(translationKey);
-
-      if (definition) {
-        this.logger.debug(
-          `Found translation definition: ${definition.content}`,
+      // Search for translation definition using scope-aware lookup
+      const scopedDefinition =
+        this.scopeAwareProvider.findScopedTranslationDefinition(
+          this.textDocumentUri,
+          translationKey,
+          this.position.line,
         );
-        return `**Translation:** \`${translationKey}\`\n\n**Locales:**\n${definition.content}`;
+
+      if (scopedDefinition) {
+        this.logger.debug(
+          `Found scoped translation definition: ${scopedDefinition.content}`,
+        );
+        return `**Translation:** \`${translationKey}\`\n\n**Locales:**\n${scopedDefinition.content}`;
       } else {
         return `**Translation:** \`${translationKey}\`\n\n**Status:** Definition not found`;
       }
@@ -94,64 +94,5 @@ export class HoverHandler {
 
     // Fallback to original behavior
     return `nodeText: ${node.text}, nodeType: ${node.type}`;
-  }
-
-  private findTranslationInRelatedFiles(
-    translationKey: string,
-  ): { content: string; filePath: string } | null {
-    // First, find the main template file (in case we're starting from a text part)
-    const mainTemplateFile = this.relatedFilesProvider.getMainTemplateFile(
-      this.textDocumentUri,
-    );
-    if (!mainTemplateFile) {
-      this.logger.error("Could not determine main template file");
-      return null;
-    }
-
-    // Get all related files for this template using the main template file
-    const mainTemplateUri = `file://${mainTemplateFile}`;
-    const allFiles =
-      this.relatedFilesProvider.getAllTemplateFiles(mainTemplateUri);
-
-    this.logger.debug(
-      `Searching for translation '${translationKey}' in ${allFiles.length} files: ${allFiles.join(", ")}`,
-    );
-
-    for (const filePath of allFiles) {
-      try {
-        if (!fs.existsSync(filePath)) {
-          this.logger.warn(`File not found: ${filePath}`);
-          continue;
-        }
-
-        const fileContent = fs.readFileSync(filePath, "utf8");
-        this.logger.debug(`File content (${filePath}): "${fileContent}"`);
-
-        const parsedTree = this.provider.parseText(fileContent);
-
-        if (!parsedTree) {
-          this.logger.warn(`Failed to parse file: ${filePath}`);
-          continue;
-        }
-
-        this.logger.debug(`Successfully parsed file: ${filePath}`);
-
-        const definition = this.provider.findTranslationDefinitionByKey(
-          parsedTree,
-          translationKey,
-        );
-
-        if (definition) {
-          const content =
-            this.provider.extractTranslationDefinitionContent(definition);
-          this.logger.debug(`Found translation definition in: ${filePath}`);
-          return { content, filePath };
-        }
-      } catch (error) {
-        this.logger.error(`Error processing file ${filePath}: ${error}`);
-      }
-    }
-
-    return null;
   }
 }
