@@ -53,4 +53,152 @@ export class TreeSitterLiquidProvider {
   getTreeString(tree: Parser.Tree): string {
     return tree.rootNode.toString();
   }
+
+  // Find translation calls ({% t 'translation_name' %})
+  findTranslationCalls(tree: Parser.Tree): Parser.QueryMatch[] {
+    const queryString = `
+      (translation_expression
+        key: (string) @translation_key
+      )
+    `;
+    return this.query(queryString, tree);
+  }
+
+  // Find translation definitions ({% t= 'translation_name' default:'Text' %})
+  findTranslationDefinitions(tree: Parser.Tree): Parser.QueryMatch[] {
+    const queryString = `
+      (translation_statement
+        key: (string) @translation_key
+      )
+    `;
+    return this.query(queryString, tree);
+  }
+
+  // Extract translation key from a string node
+  extractTranslationKey(stringNode: Parser.SyntaxNode): string {
+    const text = stringNode.text;
+    // Remove quotes from the string
+    return text.replace(/^['"]|['"]$/g, "");
+  }
+
+  // Check if a node is a translation call
+  isTranslationCall(node: Parser.SyntaxNode): boolean {
+    // Check if we're inside a translation_expression
+    let current: Parser.SyntaxNode | null = node;
+    while (current && current.type !== "translation_expression") {
+      current = current.parent;
+    }
+
+    return current !== null;
+  }
+
+  // Get translation key from current position
+  getTranslationKeyAtPosition(
+    tree: Parser.Tree,
+    row: number,
+    column: number,
+  ): string | null {
+    const node = tree.rootNode.descendantForPosition({ row, column });
+
+    // Check if we're on a translation call
+    if (!this.isTranslationCall(node)) {
+      return null;
+    }
+
+    // Find the translation_expression node
+    let current: Parser.SyntaxNode | null = node;
+    while (current && current.type !== "translation_expression") {
+      current = current.parent;
+    }
+
+    if (!current) return null;
+
+    // Look for the key field
+    const keyNode = current.childForFieldName("key");
+    if (keyNode && keyNode.type === "string") {
+      return this.extractTranslationKey(keyNode);
+    }
+
+    return null;
+  }
+
+  // Find translation definition by key
+  findTranslationDefinitionByKey(
+    tree: Parser.Tree,
+    translationKey: string,
+  ): Parser.SyntaxNode | null {
+    const definitions = this.findTranslationDefinitions(tree);
+
+    for (const match of definitions) {
+      for (const capture of match.captures) {
+        if (
+          capture.name === "translation_key" &&
+          this.extractTranslationKey(capture.node) === translationKey
+        ) {
+          // Return the parent translation_statement node
+          let parent = capture.node.parent;
+          while (parent && parent.type !== "translation_statement") {
+            parent = parent.parent;
+          }
+          return parent;
+        }
+      }
+    }
+
+    return null;
+  }
+
+  // Extract translation definition content showing all key:value pairs
+  extractTranslationDefinitionContent(
+    definitionNode: Parser.SyntaxNode,
+  ): string {
+    // For a translation definition like {% t= 'key' default:'Text' nl:'Tekst' fr:'Texte' %}
+    // we want to show all key:value pairs
+
+    const localeDeclarations = definitionNode.children.filter(
+      (child) => child.type === "locale_declaration",
+    );
+
+    if (localeDeclarations.length === 0) {
+      return definitionNode.text;
+    }
+
+    const keyValuePairs: string[] = [];
+
+    for (const declaration of localeDeclarations) {
+      const keyNode = declaration.childForFieldName("key");
+      const valueNode = declaration.childForFieldName("value");
+
+      if (keyNode && valueNode?.type === "string") {
+        const key = keyNode.text;
+        const value = this.extractTranslationKey(valueNode);
+        // Only include non-empty translations
+        if (value.trim()) {
+          keyValuePairs.push(`${key}: "${value}"`);
+        }
+      }
+    }
+
+    return keyValuePairs.length > 0
+      ? keyValuePairs.join("\n")
+      : definitionNode.text;
+  }
+
+  // Get the precise location of the translation key within a definition
+  getTranslationKeyLocation(
+    definitionNode: Parser.SyntaxNode,
+  ): Parser.SyntaxNode | null {
+    // Find the key field in the translation_statement
+    const keyNode = definitionNode.childForFieldName("key");
+    if (keyNode && keyNode.type === "string") {
+      return keyNode;
+    }
+
+    // Fallback: look for the first string node
+    const stringNodes = definitionNode.children.filter(
+      (child) => child.type === "string",
+    );
+
+    return stringNodes.length > 0 ? stringNodes[0] : null;
+  }
 }

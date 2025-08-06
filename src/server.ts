@@ -7,11 +7,13 @@ import {
   InitializeResult,
   Connection,
   Hover,
+  Definition,
 } from "vscode-languageserver/node";
 
 import { TextDocument } from "vscode-languageserver-textdocument";
 import { Logger } from "./logger";
 import { HoverHandler } from "./hoverHandler";
+import { DefinitionHandler } from "./definitionHandler";
 
 export class LiquidLanguageServer {
   private connection: Connection;
@@ -36,6 +38,7 @@ export class LiquidLanguageServer {
         capabilities: {
           textDocumentSync: TextDocumentSyncKind.Incremental,
           hoverProvider: true,
+          definitionProvider: true,
         },
       };
       return result;
@@ -69,6 +72,17 @@ export class LiquidLanguageServer {
         };
       }
       return null;
+    });
+
+    this.connection.onDefinition(async (params): Promise<Definition | null> => {
+      this.logger.logRequest("onDefinition", params);
+      this.connection.console.log(
+        `Definition request for: ${params.textDocument.uri}`,
+      );
+
+      const definitionHandler = new DefinitionHandler(params);
+      const response = await definitionHandler.handleDefinitionRequest();
+      return response;
     });
 
     this.documents.listen(this.connection);

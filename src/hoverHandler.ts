@@ -51,6 +51,33 @@ export class HoverHandler {
 
     this.logger.debug(`Text: ${node.text} Type: ${node.type}`);
 
+    // Check if this is a translation call
+    const translationKey = this.provider.getTranslationKeyAtPosition(
+      parsedTree,
+      this.position.line,
+      this.position.character,
+    );
+
+    if (translationKey) {
+      this.logger.debug(`Found translation key: ${translationKey}`);
+
+      // Find the corresponding translation definition
+      const definition = this.provider.findTranslationDefinitionByKey(
+        parsedTree,
+        translationKey,
+      );
+
+      if (definition) {
+        const content =
+          this.provider.extractTranslationDefinitionContent(definition);
+        this.logger.debug(`Found translation definition: ${content}`);
+        return `**Translation:** \`${translationKey}\`\n\n**Locales:**\n${content}`;
+      } else {
+        return `**Translation:** \`${translationKey}\`\n\n**Status:** Definition not found`;
+      }
+    }
+
+    // Fallback to original behavior
     return `nodeText: ${node.text}, nodeType: ${node.type}`;
   }
 }

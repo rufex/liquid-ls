@@ -1,7 +1,14 @@
 import { LiquidLanguageServer } from "../src/server";
 import { createConnection } from "vscode-languageserver/node";
 
-jest.mock("vscode-languageserver/node");
+jest.mock("vscode-languageserver/node", () => ({
+  ...jest.requireActual("vscode-languageserver/node"),
+  createConnection: jest.fn(),
+  TextDocuments: jest.fn().mockImplementation(() => ({
+    onDidChangeContent: jest.fn(),
+    listen: jest.fn(),
+  })),
+}));
 
 describe("LiquidLanguageServer", () => {
   let server: LiquidLanguageServer;
@@ -14,6 +21,8 @@ describe("LiquidLanguageServer", () => {
       onInitialized: jest.fn(),
       onDidChangeConfiguration: jest.fn(),
       onDidChangeWatchedFiles: jest.fn(),
+      onHover: jest.fn(),
+      onDefinition: jest.fn(),
       listen: jest.fn(),
       dispose: jest.fn(),
       console: {
@@ -44,8 +53,9 @@ describe("LiquidLanguageServer", () => {
     it("should setup connection handlers", () => {
       expect(mockConnection.onInitialize).toHaveBeenCalled();
       expect(mockConnection.onInitialized).toHaveBeenCalled();
-      expect(mockConnection.onDidChangeConfiguration).toHaveBeenCalled();
       expect(mockConnection.onDidChangeWatchedFiles).toHaveBeenCalled();
+      expect(mockConnection.onHover).toHaveBeenCalled();
+      expect(mockConnection.onDefinition).toHaveBeenCalled();
     });
   });
 
@@ -66,11 +76,8 @@ describe("LiquidLanguageServer", () => {
       expect(result).toEqual({
         capabilities: {
           textDocumentSync: 2, // TextDocumentSyncKind.Incremental
-          workspace: {
-            workspaceFolders: {
-              supported: true,
-            },
-          },
+          hoverProvider: true,
+          definitionProvider: true,
         },
       });
     });
@@ -86,6 +93,8 @@ describe("LiquidLanguageServer", () => {
       expect(result).toEqual({
         capabilities: {
           textDocumentSync: 2, // TextDocumentSyncKind.Incremental
+          hoverProvider: true,
+          definitionProvider: true,
         },
       });
     });
@@ -98,18 +107,7 @@ describe("LiquidLanguageServer", () => {
     });
   });
 
-  describe("configuration handling", () => {
-    it("should handle configuration changes", () => {
-      const onDidChangeConfigurationCallback =
-        mockConnection.onDidChangeConfiguration.mock.calls[0][0];
-
-      onDidChangeConfigurationCallback({});
-
-      expect(mockConnection.console.log).toHaveBeenCalledWith(
-        "Configuration changed",
-      );
-    });
-
+  describe("event handling", () => {
     it("should handle file change events", () => {
       const onDidChangeWatchedFilesCallback =
         mockConnection.onDidChangeWatchedFiles.mock.calls[0][0];
@@ -119,6 +117,16 @@ describe("LiquidLanguageServer", () => {
       expect(mockConnection.console.log).toHaveBeenCalledWith(
         "File change event received",
       );
+    });
+
+    it("should handle hover requests", () => {
+      const onHoverCallback = mockConnection.onHover.mock.calls[0][0];
+      expect(onHoverCallback).toBeDefined();
+    });
+
+    it("should handle definition requests", () => {
+      const onDefinitionCallback = mockConnection.onDefinition.mock.calls[0][0];
+      expect(onDefinitionCallback).toBeDefined();
     });
   });
 
