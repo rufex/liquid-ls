@@ -42,6 +42,7 @@ This document summarizes the comprehensive fixture-based testing implementation 
 ### 4. Implementation Fixes
 
 - ✅ **Fixed config.json path resolution**: `ScopeAwareProvider` now uses config.json mappings instead of inferring paths
+- ✅ **Cleaned up hover behavior**: Removed debug node information display, now only shows hover for translation tags
 - ✅ Corrected `ScopeAwareProvider.resolveIncludePath()` to handle only `parts/` prefix (plural)
 - ✅ Made name resolution flexible for any string after `parts/` (not just specific patterns)
 - ✅ Updated all fixture files to use correct `parts/` syntax
@@ -134,13 +135,15 @@ All fixtures follow the pattern:
 
 1. `CLAUDE.md` - Added terminology and fixture documentation
 2. `src/scopeAwareProvider.ts` - **Fixed to use config.json path mappings instead of inference**
-3. `fixtures/market-repo/account_templates/account_1/text_parts/part_1.liquid` - Added nested include
-4. `fixtures/market-repo/account_templates/account_2/main.liquid` - Added out-of-scope test case
-5. `fixtures/market-repo/account_templates/account_2/text_parts/part_1.liquid` - Added translation definition for scope test
-6. `fixtures/market-repo/account_templates/account_3/main.liquid` - Added no-include test case
-7. `fixtures/market-repo/account_templates/account_3/text_parts/part_1.liquid` - Added translation definition for no-include test
-8. `fixtures/market-repo/account_templates/account_custom/` - **Added custom config.json path test case**
-9. `test/fixtures-integration.test.ts` - Comprehensive test suite with scope-aware behavior and config.json path resolution tests
+3. `src/hoverHandler.ts` - **Cleaned up to only show hover for translation tags (removed debug node info)**
+4. `fixtures/market-repo/account_templates/account_1/text_parts/part_1.liquid` - Added nested include
+5. `fixtures/market-repo/account_templates/account_2/main.liquid` - Added out-of-scope test case
+6. `fixtures/market-repo/account_templates/account_2/text_parts/part_1.liquid` - Added translation definition for scope test
+7. `fixtures/market-repo/account_templates/account_3/main.liquid` - Added no-include test case
+8. `fixtures/market-repo/account_templates/account_3/text_parts/part_1.liquid` - Added translation definition for no-include test
+9. `fixtures/market-repo/account_templates/account_custom/` - **Added custom config.json path test case**
+10. `test/hoverHandler.test.ts` - Updated test to expect null for non-translation content
+11. `test/fixtures-integration.test.ts` - Comprehensive test suite with scope-aware behavior and config.json path resolution tests
 
 ## Quality Assurance
 

@@ -80,15 +80,14 @@ describe("HoverHandler", () => {
       expect(result).toBeNull();
     });
 
-    it("should return basic node info for non-translation content", async () => {
+    it("should return null for non-translation content", async () => {
       const content = "<h1>Hello World</h1>";
       mockFs.readFileSync = jest.fn().mockReturnValue(content);
 
       const handler = new HoverHandler(mockParams);
       const result = await handler.handleHoverRequest();
 
-      expect(result).toContain("nodeText:");
-      expect(result).toContain("nodeType:");
+      expect(result).toBeNull();
     });
 
     it("should return translation info when hovering over translation call", async () => {

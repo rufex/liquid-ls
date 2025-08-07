@@ -92,7 +92,7 @@ export class HoverHandler {
       }
     }
 
-    // Fallback to original behavior
-    return `nodeText: ${node.text}, nodeType: ${node.type}`;
+    // No hover information for non-translation content
+    return null;
   }
 }
