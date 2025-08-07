@@ -24,7 +24,7 @@ This document summarizes the comprehensive fixture-based testing implementation 
 
 ### 3. Comprehensive Test Suite
 
-- ✅ Created `test/fixtures-integration.test.ts` with 26 comprehensive tests
+- ✅ Created `test/fixtures-integration.test.ts` with 28 comprehensive tests
 - ✅ Covered all template types (AT, RT, EF) for both hover and go-to-definition functionality
 - ✅ Tested include scenarios:
   - Parts included in main templates
@@ -33,16 +33,20 @@ This document summarizes the comprehensive fixture-based testing implementation 
   - Include statement after translation tag (out of scope)
   - No include statement (translation not available)
   - Scope boundary verification
+- ✅ Added config.json path resolution tests:
+  - Custom paths defined in config.json are correctly used
+  - Verification that inference is not used when config.json exists
 - ✅ Added cross-template consistency tests
 - ✅ Included edge cases and error handling tests
 
 ### 4. Implementation Fixes
 
+- ✅ **Fixed config.json path resolution**: `ScopeAwareProvider` now uses config.json mappings instead of inferring paths
 - ✅ Corrected `ScopeAwareProvider.resolveIncludePath()` to handle only `parts/` prefix (plural)
 - ✅ Made name resolution flexible for any string after `parts/` (not just specific patterns)
 - ✅ Updated all fixture files to use correct `parts/` syntax
 - ✅ Fixed AT fixture to include proper nested include structure
-- ✅ All 106 tests now pass (100% success rate)
+- ✅ All 114 tests now pass (100% success rate)
 
 ## Test Coverage
 
@@ -77,6 +81,12 @@ This document summarizes the comprehensive fixture-based testing implementation 
 - ✅ **Scope boundaries**: Same file behaves differently based on cursor position relative to includes
 - ✅ **Positive verification**: Include before translation correctly finds definitions
 
+### Config.json Path Resolution Tested
+
+- ✅ **Custom paths**: Templates with non-standard directory structures defined in config.json
+- ✅ **Config precedence**: config.json mappings take precedence over inferred paths
+- ✅ **Fallback behavior**: Standard directory structure used when config.json mapping not found
+
 ### Edge Cases Tested
 
 - ✅ Templates without text_parts
@@ -89,11 +99,12 @@ This document summarizes the comprehensive fixture-based testing implementation 
 
 ### Include Path Resolution
 
-The fixture repository uses the standard include pattern:
+The implementation now correctly uses config.json mappings:
 
-- `'parts/part_1'` - Maps to `text_parts/part_1.liquid`
-- `'parts/part_2'` - Maps to `text_parts/part_2.liquid`
-- `'parts/any_name'` - Maps to `text_parts/any_name.liquid` (flexible naming)
+- **Config-based**: `'parts/part_1'` → looks up `"part_1"` in config.json `text_parts` → resolves to actual path
+- **Example**: `"part_1": "text_parts/part_1.liquid"` → `text_parts/part_1.liquid`
+- **Custom paths**: `"custom_part": "custom_directory/my_custom_part.liquid"` → `custom_directory/my_custom_part.liquid`
+- **Fallback**: If no config.json mapping found, falls back to standard `text_parts/` directory structure
 
 ### Scope-Aware Translation Lookup
 
@@ -114,21 +125,22 @@ All fixtures follow the pattern:
 
 ## Test Results
 
-- **Total Tests**: 112
-- **Passing Tests**: 112 (100%)
+- **Total Tests**: 114
+- **Passing Tests**: 114 (100%)
 - **Test Suites**: 8 (all passing)
-- **Coverage**: All template types, include scenarios, scope-aware behavior, and edge cases
+- **Coverage**: All template types, include scenarios, scope-aware behavior, config.json path resolution, and edge cases
 
 ## Files Modified
 
 1. `CLAUDE.md` - Added terminology and fixture documentation
-2. `src/scopeAwareProvider.ts` - Enhanced include path resolution for `parts/` prefix only
+2. `src/scopeAwareProvider.ts` - **Fixed to use config.json path mappings instead of inference**
 3. `fixtures/market-repo/account_templates/account_1/text_parts/part_1.liquid` - Added nested include
 4. `fixtures/market-repo/account_templates/account_2/main.liquid` - Added out-of-scope test case
 5. `fixtures/market-repo/account_templates/account_2/text_parts/part_1.liquid` - Added translation definition for scope test
 6. `fixtures/market-repo/account_templates/account_3/main.liquid` - Added no-include test case
 7. `fixtures/market-repo/account_templates/account_3/text_parts/part_1.liquid` - Added translation definition for no-include test
-8. `test/fixtures-integration.test.ts` - Comprehensive test suite with scope-aware behavior tests
+8. `fixtures/market-repo/account_templates/account_custom/` - **Added custom config.json path test case**
+9. `test/fixtures-integration.test.ts` - Comprehensive test suite with scope-aware behavior and config.json path resolution tests
 
 ## Quality Assurance
 

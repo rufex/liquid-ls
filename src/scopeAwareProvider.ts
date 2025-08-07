@@ -5,6 +5,11 @@ import * as fs from "fs";
 import * as path from "path";
 import * as Parser from "tree-sitter";
 
+interface TemplateConfig {
+  text_parts?: string[] | Record<string, string>;
+  [key: string]: unknown;
+}
+
 export interface IncludeStatement {
   includePath: string;
   resolvedFilePath: string;
@@ -236,7 +241,55 @@ export class ScopeAwareProvider {
   }
 
   /**
-   * Resolve include path to actual file path
+   * Read and parse config.json for a template directory
+   */
+  private readTemplateConfig(templateDir: string): TemplateConfig | null {
+    const configPath = path.join(templateDir, "config.json");
+
+    try {
+      if (!fs.existsSync(configPath)) {
+        this.logger.debug(`No config.json found at: ${configPath}`);
+        return null;
+      }
+
+      const configContent = fs.readFileSync(configPath, "utf8");
+      const config: TemplateConfig = JSON.parse(configContent);
+
+      this.logger.debug(`Loaded config from: ${configPath}`);
+      return config;
+    } catch (error) {
+      this.logger.error(`Error reading config.json: ${error}`);
+      return null;
+    }
+  }
+
+  /**
+   * Get text_parts mappings from config.json
+   */
+  private getTextPartsMapping(templateDir: string): Record<string, string> {
+    const config = this.readTemplateConfig(templateDir);
+
+    if (!config || !config.text_parts) {
+      return {};
+    }
+
+    // Handle both array and object formats for text_parts
+    if (Array.isArray(config.text_parts)) {
+      // Convert array to object mapping (index-based keys)
+      const mapping: Record<string, string> = {};
+      config.text_parts.forEach((textPart, index) => {
+        mapping[`part_${index}`] = textPart;
+      });
+      return mapping;
+    } else if (typeof config.text_parts === "object") {
+      return config.text_parts;
+    }
+
+    return {};
+  }
+
+  /**
+   * Resolve include path to actual file path using config.json mappings
    */
   private resolveIncludePath(
     includePath: string,
@@ -244,17 +297,45 @@ export class ScopeAwareProvider {
   ): string | null {
     const possiblePaths: string[] = [];
 
-    // Handle includes that start with "parts/" - these map to text_parts/ directory
+    // First, try to resolve using config.json mappings
+    const textPartsMapping = this.getTextPartsMapping(templateDir);
+
+    // Handle includes that start with "parts/" - map to config.json text_parts
     if (includePath.startsWith("parts/")) {
       const partName = includePath.substring(6); // Remove "parts/" prefix
+
+      // Look for exact match in config.json text_parts
+      if (textPartsMapping[partName]) {
+        const configPath = path.resolve(
+          templateDir,
+          textPartsMapping[partName],
+        );
+        possiblePaths.push(configPath);
+        this.logger.debug(
+          `Found config mapping: "${includePath}" -> "${textPartsMapping[partName]}" -> ${configPath}`,
+        );
+      }
+
+      // Fallback: try standard text_parts directory structure
       possiblePaths.push(
-        // Map "parts/any_name" -> "text_parts/any_name.liquid"
         path.resolve(templateDir, "text_parts", `${partName}.liquid`),
         path.resolve(templateDir, "text_parts", partName),
       );
     }
 
-    // Standard resolution paths
+    // For non-prefixed includes, check config.json mappings directly
+    if (textPartsMapping[includePath]) {
+      const configPath = path.resolve(
+        templateDir,
+        textPartsMapping[includePath],
+      );
+      possiblePaths.push(configPath);
+      this.logger.debug(
+        `Found config mapping: "${includePath}" -> "${textPartsMapping[includePath]}" -> ${configPath}`,
+      );
+    }
+
+    // Standard resolution paths (fallback)
     possiblePaths.push(
       // Direct path relative to template directory
       path.resolve(templateDir, `${includePath}.liquid`),
@@ -268,6 +349,8 @@ export class ScopeAwareProvider {
       path.resolve(templateDir, "parts", `${includePath}.liquid`),
       path.resolve(templateDir, "parts", includePath),
     );
+
+    // Try each possible path until we find one that exists
     for (const possiblePath of possiblePaths) {
       if (fs.existsSync(possiblePath)) {
         this.logger.debug(

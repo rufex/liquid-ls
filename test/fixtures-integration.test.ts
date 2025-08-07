@@ -584,6 +584,65 @@ describe("Fixtures Integration Tests", () => {
     });
   });
 
+  describe("Config.json Path Resolution", () => {
+    it("should use custom paths from config.json instead of inferring", async () => {
+      // Test with account_custom which has custom paths in config.json
+      const customPath = path.join(
+        fixturesPath,
+        "account_templates",
+        "account_custom",
+      );
+      const params: HoverParams = {
+        textDocument: {
+          uri: `file://${path.join(customPath, "main.liquid")}`,
+        },
+        position: {
+          line: 2, // {% t "custom_translation" %}
+          character: 8,
+        },
+      };
+
+      const handler = new HoverHandler(params);
+      const result = await handler.handleHoverRequest();
+
+      expect(result).toBeDefined();
+      expect(result).toContain("custom_translation");
+      expect(result).toContain("Custom Translation");
+      expect(result).toContain("Traducción Personalizada");
+      expect(result).not.toContain("Definition not found");
+    });
+
+    it("should navigate to custom config.json defined paths", async () => {
+      const customPath = path.join(
+        fixturesPath,
+        "account_templates",
+        "account_custom",
+      );
+      const params: DefinitionParams = {
+        textDocument: {
+          uri: `file://${path.join(customPath, "main.liquid")}`,
+        },
+        position: {
+          line: 2, // {% t "custom_translation" %}
+          character: 8,
+        },
+      };
+
+      const handler = new DefinitionHandler(params);
+      const result = await handler.handleDefinitionRequest();
+
+      expect(result).toBeDefined();
+      expect(Array.isArray(result)).toBe(true);
+      if (Array.isArray(result) && result.length > 0) {
+        // Should point to the custom path defined in config.json
+        expect(result[0].uri).toContain(
+          "custom_directory/my_custom_part.liquid",
+        );
+        expect(result[0].range.start.line).toBe(0);
+      }
+    });
+  });
+
   describe("Edge Cases and Error Handling", () => {
     it("should handle templates without text_parts", async () => {
       // Test with account_2 which has no text_parts

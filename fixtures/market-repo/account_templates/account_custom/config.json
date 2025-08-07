@@ -1,0 +1,14 @@
+{
+  "id": {
+    "1001": 50004,
+    "1002": 51004
+  },
+  "partner_id": {
+    "25": 504,
+    "26": 514
+  },
+  "text_parts": {
+    "custom_part": "custom_directory/my_custom_part.liquid",
+    "another_part": "different_path/another.liquid"
+  }
+}
