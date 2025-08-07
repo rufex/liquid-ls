@@ -309,4 +309,77 @@ describe("ScopeAwareProvider", () => {
       expect(result?.content).toContain("Utility Translation");
     });
   });
+
+  describe("Shared Parts Integration", () => {
+    const fixturesPath = path.join(__dirname, "..", "fixtures", "market-repo");
+
+    it("should resolve shared/ includes to shared_parts directory", () => {
+      const providerWithWorkspace = new ScopeAwareProvider(fixturesPath);
+
+      // Test resolving shared/shared_part_1 from reconciliation_text_1
+      const templateDir = path.join(
+        fixturesPath,
+        "reconciliation_texts",
+        "reconciliation_text_1",
+      );
+      const resolvedPath = providerWithWorkspace.resolveIncludePath(
+        "shared/shared_part_1",
+        templateDir,
+      );
+
+      expect(resolvedPath).toBeDefined();
+      expect(resolvedPath).toContain(
+        "shared_parts/shared_part_1/shared_part_1.liquid",
+      );
+    });
+
+    it("should validate shared part usage permissions", () => {
+      const providerWithWorkspace = new ScopeAwareProvider(fixturesPath);
+
+      // Test that shared_part_1 is allowed for reconciliation_text_1
+      const rt1TemplateDir = path.join(
+        fixturesPath,
+        "reconciliation_texts",
+        "reconciliation_text_1",
+      );
+      const resolvedPath1 = providerWithWorkspace.resolveIncludePath(
+        "shared/shared_part_1",
+        rt1TemplateDir,
+      );
+      expect(resolvedPath1).toBeDefined();
+
+      // Test that shared_part_1 is NOT allowed for account_1
+      const at1TemplateDir = path.join(
+        fixturesPath,
+        "account_templates",
+        "account_1",
+      );
+      const resolvedPath2 = providerWithWorkspace.resolveIncludePath(
+        "shared/shared_part_1",
+        at1TemplateDir,
+      );
+      expect(resolvedPath2).toBeNull();
+    });
+
+    it("should find translations from included shared parts", () => {
+      const providerWithWorkspace = new ScopeAwareProvider(fixturesPath);
+      const rtMainFile = path.join(
+        fixturesPath,
+        "reconciliation_texts",
+        "reconciliation_text_1",
+        "main.liquid",
+      );
+
+      // Should find shared_translation_1 from shared_part_1 (included at line 1)
+      const result = providerWithWorkspace.findScopedTranslationDefinition(
+        `file://${rtMainFile}`,
+        "shared_translation_1",
+        5, // After the include
+      );
+
+      expect(result).not.toBeNull();
+      expect(result?.filePath).toContain("shared_part_1.liquid");
+      expect(result?.content).toContain("Shared Translation 1");
+    });
+  });
 });

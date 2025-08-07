@@ -3,6 +3,7 @@ import { Logger } from "./logger";
 import { URI } from "vscode-uri";
 import * as fs from "fs";
 import * as path from "path";
+import { SharedPartsProvider } from "./sharedPartsProvider";
 import * as Parser from "tree-sitter";
 
 interface TemplateConfig {
@@ -34,10 +35,14 @@ export interface TranslationDefinitionResult {
 export class ScopeAwareProvider {
   private logger: Logger;
   private treeProvider: TreeSitterLiquidProvider;
+  private sharedPartsProvider: SharedPartsProvider | null = null;
 
-  constructor() {
+  constructor(workspaceRoot?: string) {
     this.logger = new Logger("ScopeAwareProvider");
     this.treeProvider = new TreeSitterLiquidProvider();
+    if (workspaceRoot) {
+      this.sharedPartsProvider = new SharedPartsProvider(workspaceRoot);
+    }
   }
 
   /**
@@ -297,6 +302,37 @@ export class ScopeAwareProvider {
   ): string | null {
     const possiblePaths: string[] = [];
 
+    // Handle includes that start with "shared/" - map to shared_parts
+    if (includePath.startsWith("shared/") && this.sharedPartsProvider) {
+      const sharedPartName = includePath.substring(7); // Remove "shared/" prefix
+      const sharedPart = this.sharedPartsProvider.getSharedPart(sharedPartName);
+
+      if (sharedPart) {
+        // Validate that this template is allowed to use this shared part
+        const templateHandle = this.getTemplateHandleFromPath(templateDir);
+        if (
+          templateHandle &&
+          this.sharedPartsProvider.isSharedPartAllowedForTemplate(
+            sharedPartName,
+            templateHandle,
+          )
+        ) {
+          this.logger.debug(
+            `Found shared part: "${includePath}" -> ${sharedPart.filePath}`,
+          );
+          return sharedPart.filePath;
+        } else {
+          this.logger.warn(
+            `Shared part "${sharedPartName}" is not allowed for template "${templateHandle}"`,
+          );
+          return null;
+        }
+      } else {
+        this.logger.warn(`Shared part not found: "${sharedPartName}"`);
+        return null;
+      }
+    }
+
     // First, try to resolve using config.json mappings
     const textPartsMapping = this.getTextPartsMapping(templateDir);
 
@@ -470,6 +506,37 @@ export class ScopeAwareProvider {
     // Fallback to current directory
     this.logger.warn(`Could not find main template directory for: ${filePath}`);
     return currentDir;
+  }
+
+  /**
+   * Extract template handle from template directory path
+   */
+  private getTemplateHandleFromPath(templateDir: string): string | null {
+    try {
+      const pathParts = templateDir.split(path.sep);
+
+      // Look for template type directories and extract the template name
+      for (let i = 0; i < pathParts.length - 1; i++) {
+        const currentPart = pathParts[i];
+        if (
+          [
+            "account_templates",
+            "reconciliation_texts",
+            "export_files",
+          ].includes(currentPart)
+        ) {
+          const templateName = pathParts[i + 1];
+          if (templateName) {
+            return templateName;
+          }
+        }
+      }
+
+      return null;
+    } catch (error) {
+      this.logger.error(`Error extracting template handle from path: ${error}`);
+      return null;
+    }
   }
 
   /**

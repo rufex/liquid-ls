@@ -12,12 +12,14 @@ export class HoverHandler {
   private provider: TreeSitterLiquidProvider;
   private scopeAwareProvider: ScopeAwareProvider;
 
-  constructor(params: HoverParams) {
+  constructor(params: HoverParams, workspaceRoot?: string | null) {
     this.textDocumentUri = params.textDocument.uri;
     this.position = params.position;
     this.logger = new Logger("HoverHandler");
     this.provider = new TreeSitterLiquidProvider();
-    this.scopeAwareProvider = new ScopeAwareProvider();
+    this.scopeAwareProvider = new ScopeAwareProvider(
+      workspaceRoot || undefined,
+    );
 
     this.logger.logRequest("HoverHandler initialized", {
       uri: this.textDocumentUri,

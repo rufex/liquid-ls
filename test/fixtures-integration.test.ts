@@ -17,7 +17,7 @@ describe("Fixtures Integration Tests", () => {
             uri: `file://${path.join(atPath, "main.liquid")}`,
           },
           position: {
-            line: 2, // {% t "title_t" %}
+            line: 3, // {% t "title_t" %}
             character: 8, // Inside the translation call
           },
         };
@@ -37,7 +37,7 @@ describe("Fixtures Integration Tests", () => {
             uri: `file://${path.join(atPath, "main.liquid")}`,
           },
           position: {
-            line: 3, // {% t "subtitle_t" %}
+            line: 4, // {% t "subtitle_t" %}
             character: 8, // Inside the translation call
           },
         };
@@ -58,7 +58,7 @@ describe("Fixtures Integration Tests", () => {
             uri: `file://${path.join(atPath, "main.liquid")}`,
           },
           position: {
-            line: 2, // {% t "title_t" %} - this should find definition in part_1.liquid
+            line: 3, // {% t "title_t" %} - this should find definition in part_1.liquid
             character: 8,
           },
         };
@@ -78,7 +78,7 @@ describe("Fixtures Integration Tests", () => {
             uri: `file://${path.join(atPath, "main.liquid")}`,
           },
           position: {
-            line: 2, // {% t "title_t" %}
+            line: 3, // {% t "title_t" %}
             character: 8,
           },
         };
@@ -100,7 +100,7 @@ describe("Fixtures Integration Tests", () => {
             uri: `file://${path.join(atPath, "main.liquid")}`,
           },
           position: {
-            line: 3, // {% t "subtitle_t" %}
+            line: 4, // {% t "subtitle_t" %}
             character: 8,
           },
         };
@@ -132,7 +132,7 @@ describe("Fixtures Integration Tests", () => {
             uri: `file://${path.join(rtPath, "main.liquid")}`,
           },
           position: {
-            line: 2, // {% t "title_t" %}
+            line: 3, // {% t "title_t" %}
             character: 8,
           },
         };
@@ -152,7 +152,7 @@ describe("Fixtures Integration Tests", () => {
             uri: `file://${path.join(rtPath, "main.liquid")}`,
           },
           position: {
-            line: 3, // {% t "subtitle_t" %}
+            line: 4, // {% t "subtitle_t" %}
             character: 8,
           },
         };
@@ -174,7 +174,7 @@ describe("Fixtures Integration Tests", () => {
             uri: `file://${path.join(rtPath, "main.liquid")}`,
           },
           position: {
-            line: 2, // {% t "title_t" %}
+            line: 3, // {% t "title_t" %}
             character: 8,
           },
         };
@@ -196,7 +196,7 @@ describe("Fixtures Integration Tests", () => {
             uri: `file://${path.join(rtPath, "main.liquid")}`,
           },
           position: {
-            line: 3, // {% t "subtitle_t" %}
+            line: 4, // {% t "subtitle_t" %}
             character: 8,
           },
         };
@@ -222,7 +222,7 @@ describe("Fixtures Integration Tests", () => {
             uri: `file://${path.join(rtPath, "main.liquid")}`,
           },
           position: {
-            line: 3, // {% t "subtitle_t" %} - defined in part_2, included by part_1
+            line: 4, // {% t "subtitle_t" %} - defined in part_2, included by part_1
             character: 8,
           },
         };
@@ -246,7 +246,7 @@ describe("Fixtures Integration Tests", () => {
             uri: `file://${path.join(efPath, "main.liquid")}`,
           },
           position: {
-            line: 2, // {% t "title_t" %}
+            line: 3, // {% t "title_t" %}
             character: 8,
           },
         };
@@ -266,7 +266,7 @@ describe("Fixtures Integration Tests", () => {
             uri: `file://${path.join(efPath, "main.liquid")}`,
           },
           position: {
-            line: 3, // {% t "subtitle_t" %}
+            line: 4, // {% t "subtitle_t" %}
             character: 8,
           },
         };
@@ -290,7 +290,7 @@ describe("Fixtures Integration Tests", () => {
             uri: `file://${path.join(efPath, "main.liquid")}`,
           },
           position: {
-            line: 2, // {% t "title_t" %}
+            line: 3, // {% t "title_t" %}
             character: 8,
           },
         };
@@ -312,7 +312,7 @@ describe("Fixtures Integration Tests", () => {
             uri: `file://${path.join(efPath, "main.liquid")}`,
           },
           position: {
-            line: 3, // {% t "subtitle_t" %} - not defined in EF
+            line: 4, // {% t "subtitle_t" %} - not defined in EF
             character: 8,
           },
         };
@@ -333,7 +333,7 @@ describe("Fixtures Integration Tests", () => {
             uri: `file://${path.join(efPath, "main.liquid")}`,
           },
           position: {
-            line: 2, // {% t "title_t" %} - should find in part_1
+            line: 3, // {% t "title_t" %} - should find in part_1
             character: 8,
           },
         };
@@ -372,7 +372,7 @@ describe("Fixtures Integration Tests", () => {
             uri: `file://${templatePath}`,
           },
           position: {
-            line: 2, // {% t "title_t" %}
+            line: 3, // {% t "title_t" %}
             character: 8,
           },
         };
@@ -410,7 +410,7 @@ describe("Fixtures Integration Tests", () => {
             uri: `file://${templatePath}`,
           },
           position: {
-            line: 2, // {% t "title_t" %}
+            line: 3, // {% t "title_t" %}
             character: 8,
           },
         };
@@ -541,7 +541,7 @@ describe("Fixtures Integration Tests", () => {
             uri: `file://${path.join(at1Path, "main.liquid")}`,
           },
           position: {
-            line: 2, // {% t "title_t" %} - after include
+            line: 3, // {% t "title_t" %} - after include
             character: 8,
           },
         };
@@ -842,6 +842,247 @@ describe("Fixtures Integration Tests", () => {
       const result = await handler.handleHoverRequest();
 
       expect(typeof result === "string" || result === null).toBe(true);
+    });
+  });
+
+  describe("Shared Parts Integration", () => {
+    const rtPath = path.join(
+      fixturesPath,
+      "reconciliation_texts",
+      "reconciliation_text_1",
+    );
+
+    describe("Shared Parts Go-to-Definition", () => {
+      it("should navigate to shared part from include statement", async () => {
+        const params: DefinitionParams = {
+          textDocument: {
+            uri: `file://${path.join(rtPath, "main.liquid")}`,
+          },
+          position: {
+            line: 1, // {% include 'shared/shared_part_1' %}
+            character: 20, // Inside the shared part name
+          },
+        };
+
+        const handler = new DefinitionHandler(params, fixturesPath);
+        const result = await handler.handleDefinitionRequest();
+
+        expect(result).toBeDefined();
+        expect(Array.isArray(result)).toBe(true);
+        expect(result!.length).toBe(1);
+        expect(result![0].uri).toContain(
+          "shared_parts/shared_part_1/shared_part_1.liquid",
+        );
+      });
+
+      it("should not navigate to shared part if not allowed for template", async () => {
+        // Try to access shared_part_1 from account_1 (not in used_in)
+        const atPath = path.join(
+          fixturesPath,
+          "account_templates",
+          "account_1",
+        );
+
+        // First, let's add a shared include to account_1 main.liquid temporarily
+        const mainLiquidPath = path.join(atPath, "main.liquid");
+        const originalContent = fs.readFileSync(mainLiquidPath, "utf8");
+        const modifiedContent =
+          "{% include 'shared/shared_part_1' %}\n" + originalContent;
+        fs.writeFileSync(mainLiquidPath, modifiedContent);
+
+        try {
+          const params: DefinitionParams = {
+            textDocument: {
+              uri: `file://${mainLiquidPath}`,
+            },
+            position: {
+              line: 0, // {% include 'shared/shared_part_1' %}
+              character: 20, // Inside the shared part name
+            },
+          };
+
+          const handler = new DefinitionHandler(params, fixturesPath);
+          const result = await handler.handleDefinitionRequest();
+
+          // Should return null because account_1 is not in shared_part_1's used_in
+          expect(result).toBeNull();
+        } finally {
+          // Restore original content
+          fs.writeFileSync(mainLiquidPath, originalContent);
+        }
+      });
+
+      it("should handle non-existent shared part gracefully", async () => {
+        // Add a non-existent shared part include temporarily
+        const mainLiquidPath = path.join(rtPath, "main.liquid");
+        const originalContent = fs.readFileSync(mainLiquidPath, "utf8");
+        const modifiedContent =
+          "{% include 'shared/non_existent_part' %}\n" + originalContent;
+        fs.writeFileSync(mainLiquidPath, modifiedContent);
+
+        try {
+          const params: DefinitionParams = {
+            textDocument: {
+              uri: `file://${mainLiquidPath}`,
+            },
+            position: {
+              line: 0, // {% include 'shared/non_existent_part' %}
+              character: 20, // Inside the shared part name
+            },
+          };
+
+          const handler = new DefinitionHandler(params, fixturesPath);
+          const result = await handler.handleDefinitionRequest();
+
+          expect(result).toBeNull();
+        } finally {
+          // Restore original content
+          fs.writeFileSync(mainLiquidPath, originalContent);
+        }
+      });
+    });
+
+    describe("Shared Parts Translation Scope", () => {
+      it("should find translations from included shared parts", async () => {
+        // Test hover on a translation that should be found in shared_part_1
+        const params: HoverParams = {
+          textDocument: {
+            uri: `file://${path.join(rtPath, "main.liquid")}`,
+          },
+          position: {
+            line: 7, // {% t "shared_translation_1" %} (if we add this call)
+            character: 8, // Inside the translation call
+          },
+        };
+
+        // First, let's add a translation call to the main.liquid
+        const mainLiquidPath = path.join(rtPath, "main.liquid");
+        const originalContent = fs.readFileSync(mainLiquidPath, "utf8");
+        const modifiedContent =
+          // eslint-disable-next-line quotes
+          originalContent + '\n{% t "shared_translation_1" %}';
+        fs.writeFileSync(mainLiquidPath, modifiedContent);
+
+        try {
+          const handler = new HoverHandler(params, fixturesPath);
+          const result = await handler.handleHoverRequest();
+
+          expect(result).toBeDefined();
+          expect(result).toContain("shared_translation_1");
+          expect(result).toContain("Shared Translation 1");
+          expect(result).toContain("Gedeelde Vertaling 1");
+        } finally {
+          // Restore original content
+          fs.writeFileSync(mainLiquidPath, originalContent);
+        }
+      });
+
+      it("should prioritize shared part translations in scope order", async () => {
+        // Test with RT2 which includes both shared_part_1 and shared_part_2
+        // Both define "shared_common" but with different values
+        const rt2Path = path.join(
+          fixturesPath,
+          "reconciliation_texts",
+          "reconciliation_text_2",
+        );
+        const mainLiquidPath = path.join(rt2Path, "main.liquid");
+        const originalContent = fs.readFileSync(mainLiquidPath, "utf8");
+        // eslint-disable-next-line quotes
+        const modifiedContent = originalContent + '\n{% t "shared_common" %}';
+        fs.writeFileSync(mainLiquidPath, modifiedContent);
+
+        try {
+          const params: HoverParams = {
+            textDocument: {
+              uri: `file://${mainLiquidPath}`,
+            },
+            position: {
+              line: 4, // {% t "shared_common" %}
+              character: 8, // Inside the translation call
+            },
+          };
+
+          const handler = new HoverHandler(params, fixturesPath);
+          const result = await handler.handleHoverRequest();
+
+          expect(result).toBeDefined();
+          expect(result).toContain("shared_common");
+          // Should find the first definition (from shared_part_1)
+          expect(result).toContain("Common Shared Text");
+        } finally {
+          // Restore original content
+          fs.writeFileSync(mainLiquidPath, originalContent);
+        }
+      });
+    });
+
+    describe("Shared Parts Validation", () => {
+      it("should validate shared part usage based on used_in configuration", async () => {
+        // shared_part_1 should be allowed for reconciliation_text_1 and reconciliation_text_2
+        const params1: DefinitionParams = {
+          textDocument: {
+            uri: `file://${path.join(rtPath, "main.liquid")}`,
+          },
+          position: {
+            line: 1, // {% include 'shared/shared_part_1' %}
+            character: 20,
+          },
+        };
+
+        const handler1 = new DefinitionHandler(params1, fixturesPath);
+        const result1 = await handler1.handleDefinitionRequest();
+        expect(result1).toBeDefined();
+
+        // shared_part_2 should be allowed for reconciliation_text_2 but not reconciliation_text_1
+        const rt2Path = path.join(
+          fixturesPath,
+          "reconciliation_texts",
+          "reconciliation_text_2",
+        );
+        const params2: DefinitionParams = {
+          textDocument: {
+            uri: `file://${path.join(rt2Path, "main.liquid")}`,
+          },
+          position: {
+            line: 1, // {% include 'shared/shared_part_2' %}
+            character: 20,
+          },
+        };
+
+        const handler2 = new DefinitionHandler(params2, fixturesPath);
+        const result2 = await handler2.handleDefinitionRequest();
+        expect(result2).toBeDefined();
+      });
+
+      it("should handle shared parts with empty used_in array", async () => {
+        // shared_part_3 has empty used_in array, so should not be accessible
+        const mainLiquidPath = path.join(rtPath, "main.liquid");
+        const originalContent = fs.readFileSync(mainLiquidPath, "utf8");
+        const modifiedContent =
+          "{% include 'shared/shared_part_2' %}\n" + originalContent; // shared_part_3 has name "shared_part_2"
+        fs.writeFileSync(mainLiquidPath, modifiedContent);
+
+        try {
+          const params: DefinitionParams = {
+            textDocument: {
+              uri: `file://${mainLiquidPath}`,
+            },
+            position: {
+              line: 0,
+              character: 20,
+            },
+          };
+
+          const handler = new DefinitionHandler(params, fixturesPath);
+          const result = await handler.handleDefinitionRequest();
+
+          // Should return null because reconciliation_text_1 is not in shared_part_3's used_in
+          expect(result).toBeNull();
+        } finally {
+          // Restore original content
+          fs.writeFileSync(mainLiquidPath, originalContent);
+        }
+      });
     });
   });
 });

@@ -16,12 +16,14 @@ export class DefinitionHandler {
   private scopeAwareProvider: ScopeAwareProvider;
   private relatedFilesProvider: RelatedFilesProvider;
 
-  constructor(params: DefinitionParams) {
+  constructor(params: DefinitionParams, workspaceRoot?: string | null) {
     this.textDocumentUri = params.textDocument.uri;
     this.position = params.position;
     this.logger = new Logger("DefinitionHandler");
     this.provider = new TreeSitterLiquidProvider();
-    this.scopeAwareProvider = new ScopeAwareProvider();
+    this.scopeAwareProvider = new ScopeAwareProvider(
+      workspaceRoot || undefined,
+    );
     this.relatedFilesProvider = new RelatedFilesProvider();
 
     this.logger.logRequest("DefinitionHandler initialized", {

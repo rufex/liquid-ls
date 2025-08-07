@@ -11,6 +11,7 @@ import {
 } from "vscode-languageserver/node";
 
 import { TextDocument } from "vscode-languageserver-textdocument";
+import { URI } from "vscode-uri";
 import { Logger } from "./logger";
 import { HoverHandler } from "./hoverHandler";
 import { DefinitionHandler } from "./definitionHandler";
@@ -21,6 +22,7 @@ export class LiquidLanguageServer {
     TextDocument,
   );
   private logger: Logger;
+  private workspaceRoot: string | null = null;
 
   constructor(connection?: Connection) {
     this.connection = connection || createConnection(ProposedFeatures.all);
@@ -29,9 +31,15 @@ export class LiquidLanguageServer {
   }
 
   private setupHandlers(): void {
-    this.connection.onInitialize((_params: InitializeParams) => {
-      // Currently nothing done with Client initial params
-      // const capabilities = params.capabilities;
+    this.connection.onInitialize((params: InitializeParams) => {
+      // Store workspace root for shared parts provider
+      if (params.rootUri) {
+        this.workspaceRoot = URI.parse(params.rootUri).fsPath;
+        this.logger.info(`Workspace root: ${this.workspaceRoot}`);
+      } else if (params.rootPath) {
+        this.workspaceRoot = params.rootPath;
+        this.logger.info(`Workspace root (legacy): ${this.workspaceRoot}`);
+      }
 
       const result: InitializeResult = {
         // Each capability defined needs a handler method e.g onHover
@@ -64,7 +72,7 @@ export class LiquidLanguageServer {
         `Hover request for: ${params.textDocument.uri}`,
       );
 
-      const hoverHandler = new HoverHandler(params);
+      const hoverHandler = new HoverHandler(params, this.workspaceRoot);
       const response = await hoverHandler.handleHoverRequest();
       if (response) {
         return {
@@ -80,7 +88,10 @@ export class LiquidLanguageServer {
         `Definition request for: ${params.textDocument.uri}`,
       );
 
-      const definitionHandler = new DefinitionHandler(params);
+      const definitionHandler = new DefinitionHandler(
+        params,
+        this.workspaceRoot,
+      );
       const response = await definitionHandler.handleDefinitionRequest();
       return response;
     });
