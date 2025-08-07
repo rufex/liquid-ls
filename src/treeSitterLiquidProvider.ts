@@ -108,11 +108,11 @@ export class TreeSitterLiquidProvider {
 
     // Check if we're on a translation call
     if (!this.isTranslationCall(node)) {
-      this.logger.debug(`Node is not a translation call`);
+      this.logger.debug("Node is not a translation call");
       return null;
     }
 
-    this.logger.debug(`Node is a translation call`);
+    this.logger.debug("Node is a translation call");
 
     // Find the translation_expression node
     let current: Parser.SyntaxNode | null = node;

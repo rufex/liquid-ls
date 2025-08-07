@@ -50,7 +50,7 @@ The language server is implemented in TypeScript and provides:
 ✅ **Precise Navigation**: Jumps to exact translation key location in definitions
 ✅ **Empty Translation Filtering**: Excludes empty locale values from hover information
 ✅ **Dynamic Template Structure**: Supports any template directory name with flexible config.json format
-✅ **Parts/ Directory Mapping**: Maps `{% include "parts/name" %}` to `text_parts/name.liquid`
+✅ **Parts/ Directory Mapping**: Maps `{% include "parts/any_name" %}` to `text_parts/any_name.liquid`
 ✅ **Comprehensive Testing**: Full test coverage for all components (1000+ lines of tests)
 ✅ **Error Handling**: Graceful handling of parsing errors and missing definitions
 
@@ -123,6 +123,7 @@ template_name/
 ```liquid
 {% include "parts/translations" %}  <!-- Maps to text_parts/translations.liquid -->
 {% include "parts/utilities" %}     <!-- Maps to text_parts/utilities.liquid -->
+{% include "parts/any_name" %}      <!-- Maps to text_parts/any_name.liquid -->
 ```
 
 ### Scope-Aware Behavior
@@ -159,6 +160,34 @@ SUMMARIZE any relevant information that can help yourself in future iterations o
 ALWAYS read the documentation you have in `claude/` directory before starting to work on the codebase, as it contains important information about the project and its structure.
 DEFINE types following the TypeScript conventions and the official LSP specifications.
 ALWAYS write test, run tests, run linter, run formatter, compile typescript before committing or submitting code.
+
+### Template Type Terminology
+
+For consistency in documentation and communication, use these abbreviations:
+
+- **RT**: Reconciliation Text (reconciliation_texts/)
+- **AT**: Account Template (account_templates/)
+- **EF**: Export File (export_files/)
+- **SP**: Shared Parts (shared_parts/)
+- **Templates**: Collective term for RT, AT, and EF
+
+### Test Fixtures
+
+The project includes comprehensive test fixtures in `fixtures/market-repo/` that mirror real Silverfin template structures:
+
+- **Account Templates (AT)**: `fixtures/market-repo/account_templates/account_1/`
+- **Reconciliation Texts (RT)**: `fixtures/market-repo/reconciliation_texts/reconciliation_text_1/`
+- **Export Files (EF)**: `fixtures/market-repo/export_files/export_1/`
+- **Shared Parts (SP)**: `fixtures/market-repo/shared_parts/shared_part_1/`
+
+Each template type includes:
+
+- `main.liquid`: Main template file with includes and translation calls
+- `config.json`: Template configuration with text_parts mapping
+- `text_parts/`: Directory containing part files with translation definitions
+- Nested include scenarios (parts including other parts)
+
+Use these fixtures extensively in tests to ensure all template types and include scenarios are covered.
 
 ### Parsing Constraints
 
@@ -198,7 +227,7 @@ The language server implements sophisticated scope-aware translation lookup that
 2. **Execution Order**: Processes includes in the order they appear in the template
 3. **Nested Includes**: Recursively processes includes within included files
 4. **Line-Based Scope**: Only considers translations defined before the cursor position
-5. **Path Resolution**: Maps `parts/` includes to `text_parts/` directory
+5. **Path Resolution**: Maps `parts/any_name` includes to `text_parts/any_name.liquid`
 
 ### Scope Rules
 

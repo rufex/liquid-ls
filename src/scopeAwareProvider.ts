@@ -248,7 +248,7 @@ export class ScopeAwareProvider {
     if (includePath.startsWith("parts/")) {
       const partName = includePath.substring(6); // Remove "parts/" prefix
       possiblePaths.push(
-        // Map "parts/translations" -> "text_parts/translations.liquid"
+        // Map "parts/any_name" -> "text_parts/any_name.liquid"
         path.resolve(templateDir, "text_parts", `${partName}.liquid`),
         path.resolve(templateDir, "text_parts", partName),
       );
