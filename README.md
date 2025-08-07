@@ -123,11 +123,24 @@ The language server automatically detects Silverfin template structures and read
 }
 ```
 
-## Intelligent Features
+## Features
 
-### 🧠 **Scope-Aware Translation Lookup**
+### **Template-Centric Context Building**
 
-Only shows translations that are "in scope" based on include order:
+Always builds context from the template root (main.liquid) regardless of where the request originates:
+
+```liquid
+<!-- main.liquid -->
+{% include 'parts/header' %}        ← Always starts from main template
+
+<!-- text_parts/header.liquid -->
+{% include 'parts/translations' %}  ← Request from here builds complete context
+{% t 'example_key' %}               ← Finds translations from main → header → translations
+```
+
+### **Scope-Aware Translation Lookup**
+
+Only shows translations that are "in scope" based on template execution flow:
 
 ```liquid
 {% include 'parts/translations' %}  ← Includes translation definitions
@@ -152,35 +165,3 @@ Handles complex include hierarchies:
 {% t= 'nav_home' default:'Home' %}  ← Available in main.liquid
 ```
 
-## Implementation Status
-
-### ✅ **Completed Features**
-
-- **Translation Hover Information**: Shows all locale translations when hovering over `{% t 'key' %}` calls
-- **Translation Go-to-Definition**: Navigate from translation calls to their definitions
-- **Include Go-to-Definition**: Navigate from `{% include 'parts/name' %}` statements to included files
-- **Shared Parts Support**: Navigate from `{% include 'shared/name' %}` with usage validation
-- **Scope-Aware Translation Lookup**: Only shows translations that are "in scope" at cursor position
-- **Cross-File Translation Search**: Searches across all related template files (main + text_parts + shared_parts)
-- **Include Statement Processing**: Handles `{% include "parts/name" %}` and `{% include "shared/name" %}` statements
-- **Multi-locale Support**: Displays all available language translations in formatted lists
-- **Precise Navigation**: Jumps to exact translation key location in definitions
-- **Dynamic Template Structure**: Supports any template directory name with flexible config.json format
-- **Config.json Path Resolution**: Uses config.json mappings for accurate file path resolution
-- **Shared Parts Validation**: Only allows access to shared parts configured for the current template
-- **Comprehensive Testing**: Full test coverage for all components (155+ tests, 100% passing)
-
-### 🔄 **Template Type Support**
-
-- **Account Templates (AT)**: ✅ Full support
-- **Reconciliation Texts (RT)**: ✅ Full support
-- **Export Files (EF)**: ✅ Full support
-- **Shared Parts (SP)**: ✅ Full support with validation
-
-### 🚀 **Future Enhancements**
-
-- **Translation validation**: Warn about missing translations
-- **Auto-completion**: Suggest available translation keys
-- **Rename refactoring**: Rename translation keys across files
-- **Translation file format support**: Support YAML/JSON translation files
-- **Find all references**: Show all usages of a translation key

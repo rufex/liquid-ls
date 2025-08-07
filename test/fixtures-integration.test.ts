@@ -17,12 +17,12 @@ describe("Fixtures Integration Tests", () => {
             uri: `file://${path.join(atPath, "main.liquid")}`,
           },
           position: {
-            line: 3, // {% t "title_t" %}
+            line: 2, // {% t "title_t" %}
             character: 8, // Inside the translation call
           },
         };
 
-        const handler = new HoverHandler(params);
+        const handler = new HoverHandler(params, fixturesPath);
         const result = await handler.handleHoverRequest();
 
         expect(result).toBeDefined();
@@ -37,12 +37,12 @@ describe("Fixtures Integration Tests", () => {
             uri: `file://${path.join(atPath, "main.liquid")}`,
           },
           position: {
-            line: 4, // {% t "subtitle_t" %}
+            line: 3, // {% t "subtitle_t" %}
             character: 8, // Inside the translation call
           },
         };
 
-        const handler = new HoverHandler(params);
+        const handler = new HoverHandler(params, fixturesPath);
         const result = await handler.handleHoverRequest();
 
         expect(result).toBeDefined();
@@ -58,12 +58,12 @@ describe("Fixtures Integration Tests", () => {
             uri: `file://${path.join(atPath, "main.liquid")}`,
           },
           position: {
-            line: 3, // {% t "title_t" %} - this should find definition in part_1.liquid
+            line: 2, // {% t "title_t" %} - this should find definition in part_1.liquid
             character: 8,
           },
         };
 
-        const handler = new HoverHandler(params);
+        const handler = new HoverHandler(params, fixturesPath);
         const result = await handler.handleHoverRequest();
 
         expect(result).toBeDefined();
@@ -78,12 +78,12 @@ describe("Fixtures Integration Tests", () => {
             uri: `file://${path.join(atPath, "main.liquid")}`,
           },
           position: {
-            line: 3, // {% t "title_t" %}
+            line: 2, // {% t "title_t" %}
             character: 8,
           },
         };
 
-        const handler = new DefinitionHandler(params);
+        const handler = new DefinitionHandler(params, fixturesPath);
         const result = await handler.handleDefinitionRequest();
 
         expect(result).toBeDefined();
@@ -100,12 +100,12 @@ describe("Fixtures Integration Tests", () => {
             uri: `file://${path.join(atPath, "main.liquid")}`,
           },
           position: {
-            line: 4, // {% t "subtitle_t" %}
+            line: 3, // {% t "subtitle_t" %}
             character: 8,
           },
         };
 
-        const handler = new DefinitionHandler(params);
+        const handler = new DefinitionHandler(params, fixturesPath);
         const result = await handler.handleDefinitionRequest();
 
         expect(result).toBeDefined();
@@ -137,7 +137,7 @@ describe("Fixtures Integration Tests", () => {
           },
         };
 
-        const handler = new HoverHandler(params);
+        const handler = new HoverHandler(params, fixturesPath);
         const result = await handler.handleHoverRequest();
 
         expect(result).toBeDefined();
@@ -157,7 +157,7 @@ describe("Fixtures Integration Tests", () => {
           },
         };
 
-        const handler = new HoverHandler(params);
+        const handler = new HoverHandler(params, fixturesPath);
         const result = await handler.handleHoverRequest();
 
         expect(result).toBeDefined();
@@ -179,7 +179,7 @@ describe("Fixtures Integration Tests", () => {
           },
         };
 
-        const handler = new DefinitionHandler(params);
+        const handler = new DefinitionHandler(params, fixturesPath);
         const result = await handler.handleDefinitionRequest();
 
         expect(result).toBeDefined();
@@ -201,7 +201,7 @@ describe("Fixtures Integration Tests", () => {
           },
         };
 
-        const handler = new DefinitionHandler(params);
+        const handler = new DefinitionHandler(params, fixturesPath);
         const result = await handler.handleDefinitionRequest();
 
         expect(result).toBeDefined();
@@ -227,7 +227,7 @@ describe("Fixtures Integration Tests", () => {
           },
         };
 
-        const handler = new HoverHandler(params);
+        const handler = new HoverHandler(params, fixturesPath);
         const result = await handler.handleHoverRequest();
 
         expect(result).toBeDefined();
@@ -246,12 +246,12 @@ describe("Fixtures Integration Tests", () => {
             uri: `file://${path.join(efPath, "main.liquid")}`,
           },
           position: {
-            line: 3, // {% t "title_t" %}
+            line: 2, // {% t "title_t" %}
             character: 8,
           },
         };
 
-        const handler = new HoverHandler(params);
+        const handler = new HoverHandler(params, fixturesPath);
         const result = await handler.handleHoverRequest();
 
         expect(result).toBeDefined();
@@ -266,12 +266,12 @@ describe("Fixtures Integration Tests", () => {
             uri: `file://${path.join(efPath, "main.liquid")}`,
           },
           position: {
-            line: 4, // {% t "subtitle_t" %}
+            line: 3, // {% t "subtitle_t" %}
             character: 8,
           },
         };
 
-        const handler = new HoverHandler(params);
+        const handler = new HoverHandler(params, fixturesPath);
         const result = await handler.handleHoverRequest();
 
         // Note: EF part_2.liquid is empty, so this should not find a definition
@@ -290,12 +290,12 @@ describe("Fixtures Integration Tests", () => {
             uri: `file://${path.join(efPath, "main.liquid")}`,
           },
           position: {
-            line: 3, // {% t "title_t" %}
+            line: 2, // {% t "title_t" %}
             character: 8,
           },
         };
 
-        const handler = new DefinitionHandler(params);
+        const handler = new DefinitionHandler(params, fixturesPath);
         const result = await handler.handleDefinitionRequest();
 
         expect(result).toBeDefined();
@@ -312,12 +312,12 @@ describe("Fixtures Integration Tests", () => {
             uri: `file://${path.join(efPath, "main.liquid")}`,
           },
           position: {
-            line: 4, // {% t "subtitle_t" %} - not defined in EF
+            line: 3, // {% t "subtitle_t" %} - not defined in EF
             character: 8,
           },
         };
 
-        const handler = new DefinitionHandler(params);
+        const handler = new DefinitionHandler(params, fixturesPath);
         const result = await handler.handleDefinitionRequest();
 
         expect(result).toBeNull();
@@ -333,12 +333,12 @@ describe("Fixtures Integration Tests", () => {
             uri: `file://${path.join(efPath, "main.liquid")}`,
           },
           position: {
-            line: 3, // {% t "title_t" %} - should find in part_1
+            line: 2, // {% t "title_t" %} - should find in part_1
             character: 8,
           },
         };
 
-        const handler = new HoverHandler(params);
+        const handler = new HoverHandler(params, fixturesPath);
         const result = await handler.handleHoverRequest();
 
         expect(result).toBeDefined();
@@ -367,17 +367,20 @@ describe("Fixtures Integration Tests", () => {
       ];
 
       for (const templatePath of templatePaths) {
+        // Different template types have title_t on different lines
+        const line = templatePath.includes("reconciliation_texts") ? 3 : 2;
+
         const params: HoverParams = {
           textDocument: {
             uri: `file://${templatePath}`,
           },
           position: {
-            line: 3, // {% t "title_t" %}
+            line: line, // {% t "title_t" %}
             character: 8,
           },
         };
 
-        const handler = new HoverHandler(params);
+        const handler = new HoverHandler(params, fixturesPath);
         const result = await handler.handleHoverRequest();
 
         expect(result).toBeDefined();
@@ -405,17 +408,20 @@ describe("Fixtures Integration Tests", () => {
       ];
 
       for (const templatePath of templatePaths) {
+        // Different template types have title_t on different lines
+        const line = templatePath.includes("reconciliation_texts") ? 3 : 2;
+
         const params: DefinitionParams = {
           textDocument: {
             uri: `file://${templatePath}`,
           },
           position: {
-            line: 3, // {% t "title_t" %}
+            line: line, // {% t "title_t" %}
             character: 8,
           },
         };
 
-        const handler = new DefinitionHandler(params);
+        const handler = new DefinitionHandler(params, fixturesPath);
         const result = await handler.handleDefinitionRequest();
 
         expect(result).toBeDefined();
@@ -446,7 +452,7 @@ describe("Fixtures Integration Tests", () => {
           },
         };
 
-        const handler = new HoverHandler(params);
+        const handler = new HoverHandler(params, fixturesPath);
         const result = await handler.handleHoverRequest();
 
         expect(result).toBeDefined();
@@ -471,7 +477,7 @@ describe("Fixtures Integration Tests", () => {
           },
         };
 
-        const handler = new DefinitionHandler(params);
+        const handler = new DefinitionHandler(params, fixturesPath);
         const result = await handler.handleDefinitionRequest();
 
         expect(result).toBeNull();
@@ -496,7 +502,7 @@ describe("Fixtures Integration Tests", () => {
           },
         };
 
-        const handler = new HoverHandler(params);
+        const handler = new HoverHandler(params, fixturesPath);
         const result = await handler.handleHoverRequest();
 
         expect(result).toBeDefined();
@@ -521,7 +527,7 @@ describe("Fixtures Integration Tests", () => {
           },
         };
 
-        const handler = new DefinitionHandler(params);
+        const handler = new DefinitionHandler(params, fixturesPath);
         const result = await handler.handleDefinitionRequest();
 
         expect(result).toBeNull();
@@ -541,12 +547,12 @@ describe("Fixtures Integration Tests", () => {
             uri: `file://${path.join(at1Path, "main.liquid")}`,
           },
           position: {
-            line: 3, // {% t "title_t" %} - after include
+            line: 2, // {% t "title_t" %} - after include
             character: 8,
           },
         };
 
-        const handler = new HoverHandler(params);
+        const handler = new HoverHandler(params, fixturesPath);
         const result = await handler.handleHoverRequest();
 
         expect(result).toBeDefined();
@@ -775,7 +781,7 @@ describe("Fixtures Integration Tests", () => {
           },
         };
 
-        const handler = new DefinitionHandler(params);
+        const handler = new DefinitionHandler(params, fixturesPath);
         const result = await handler.handleDefinitionRequest();
 
         expect(result).toBeNull();
@@ -950,31 +956,19 @@ describe("Fixtures Integration Tests", () => {
             uri: `file://${path.join(rtPath, "main.liquid")}`,
           },
           position: {
-            line: 7, // {% t "shared_translation_1" %} (if we add this call)
+            line: 6, // {% t "shared_translation_1" %} (existing call in main.liquid)
             character: 8, // Inside the translation call
           },
         };
 
-        // First, let's add a translation call to the main.liquid
-        const mainLiquidPath = path.join(rtPath, "main.liquid");
-        const originalContent = fs.readFileSync(mainLiquidPath, "utf8");
-        const modifiedContent =
-          // eslint-disable-next-line quotes
-          originalContent + '\n{% t "shared_translation_1" %}';
-        fs.writeFileSync(mainLiquidPath, modifiedContent);
+        // Test the existing translation call in main.liquid
+        const handler = new HoverHandler(params, fixturesPath);
+        const result = await handler.handleHoverRequest();
 
-        try {
-          const handler = new HoverHandler(params, fixturesPath);
-          const result = await handler.handleHoverRequest();
-
-          expect(result).toBeDefined();
-          expect(result).toContain("shared_translation_1");
-          expect(result).toContain("Shared Translation 1");
-          expect(result).toContain("Gedeelde Vertaling 1");
-        } finally {
-          // Restore original content
-          fs.writeFileSync(mainLiquidPath, originalContent);
-        }
+        expect(result).toBeDefined();
+        expect(result).toContain("shared_translation_1");
+        expect(result).toContain("Shared Translation 1");
+        expect(result).toContain("Gedeelde Vertaling 1");
       });
 
       it("should prioritize shared part translations in scope order", async () => {

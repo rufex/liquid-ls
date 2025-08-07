@@ -116,18 +116,274 @@ export class ScopeAwareProvider {
     filePath: string,
     cursorLine: number,
   ): ScopeContext {
-    // Build the complete execution chain including nested includes
-    const allIncludes = this.buildExecutionChain(filePath, cursorLine);
+    // Get the template root (main.liquid)
+    const templateDir = this.getMainTemplateDirectory(filePath);
+    const templateRoot = path.join(templateDir, "main.liquid");
+
+    // If we're calling from main.liquid, use simple logic
+    if (path.resolve(filePath) === path.resolve(templateRoot)) {
+      const allIncludes = this.buildExecutionChain(filePath, cursorLine);
+      return {
+        currentFile: filePath,
+        currentLine: cursorLine,
+        availableIncludes: allIncludes,
+        scopedFiles: [
+          filePath,
+          ...allIncludes.map((inc) => inc.resolvedFilePath),
+        ],
+      };
+    }
+
+    // For part files, build template-centric execution chain
+    const allIncludes = this.buildTemplatecentricExecutionChain(
+      templateRoot,
+      filePath,
+      cursorLine,
+    );
 
     return {
       currentFile: filePath,
       currentLine: cursorLine,
       availableIncludes: allIncludes,
       scopedFiles: [
-        filePath,
+        templateRoot,
         ...allIncludes.map((inc) => inc.resolvedFilePath),
       ],
     };
+  }
+
+  /**
+   * Build template-centric execution chain for part files
+   */
+  private buildTemplatecentricExecutionChain(
+    templateRoot: string,
+    originatingFile: string,
+    cursorLine: number,
+  ): IncludeStatement[] {
+    const executionChain: IncludeStatement[] = [];
+
+    // Step 1: Find where the originating file is included in the template
+    const inclusionPoint = this.findInclusionPoint(
+      templateRoot,
+      originatingFile,
+    );
+
+    if (!inclusionPoint) {
+      this.logger.warn(
+        `Could not find inclusion point for ${originatingFile} in template ${templateRoot}`,
+      );
+      // Fallback to original logic
+      return this.buildExecutionChain(originatingFile, cursorLine);
+    }
+
+    // Step 2: Build execution chain up to the inclusion point
+    this.buildExecutionChainUpToPoint(
+      templateRoot,
+      inclusionPoint,
+      executionChain,
+    );
+
+    // Step 3: Add includes from the originating file up to cursor line
+    this.addIncludesFromOriginatingFile(
+      originatingFile,
+      cursorLine,
+      executionChain,
+    );
+
+    return executionChain;
+  }
+
+  /**
+   * Find where a file is included in the template hierarchy
+   */
+  private findInclusionPoint(
+    templateRoot: string,
+    targetFile: string,
+  ): { includingFile: string; lineNumber: number } | null {
+    const processedFiles = new Set<string>();
+
+    const searchInFile = (
+      currentFile: string,
+    ): { includingFile: string; lineNumber: number } | null => {
+      if (processedFiles.has(currentFile)) {
+        return null;
+      }
+      processedFiles.add(currentFile);
+
+      try {
+        const fileContent = fs.readFileSync(currentFile, "utf8");
+        const parsedTree = this.treeProvider.parseText(fileContent);
+
+        if (!parsedTree) {
+          return null;
+        }
+
+        const includeStatements = this.findIncludeStatements(
+          parsedTree,
+          currentFile,
+        );
+
+        for (const includeStmt of includeStatements) {
+          // Check if this include resolves to our target file
+          if (
+            path.resolve(includeStmt.resolvedFilePath) ===
+            path.resolve(targetFile)
+          ) {
+            return {
+              includingFile: currentFile,
+              lineNumber: includeStmt.lineNumber,
+            };
+          }
+
+          // Recursively search in included files
+          const result = searchInFile(includeStmt.resolvedFilePath);
+          if (result) {
+            return result;
+          }
+        }
+      } catch (error) {
+        this.logger.error(`Error searching in file ${currentFile}: ${error}`);
+      }
+
+      return null;
+    };
+
+    return searchInFile(templateRoot);
+  }
+
+  /**
+   * Build execution chain up to the inclusion point
+   */
+  private buildExecutionChainUpToPoint(
+    currentFile: string,
+    inclusionPoint: { includingFile: string; lineNumber: number },
+    executionChain: IncludeStatement[],
+  ): void {
+    const processedFiles = new Set<string>();
+
+    const processFile = (filePath: string) => {
+      if (processedFiles.has(filePath)) {
+        return;
+      }
+      processedFiles.add(filePath);
+
+      try {
+        const fileContent = fs.readFileSync(filePath, "utf8");
+        const parsedTree = this.treeProvider.parseText(fileContent);
+
+        if (!parsedTree) {
+          return;
+        }
+
+        const includeStatements = this.findIncludeStatements(
+          parsedTree,
+          filePath,
+        );
+
+        for (const includeStmt of includeStatements) {
+          // If this is the inclusion point, stop here
+          if (
+            path.resolve(filePath) ===
+              path.resolve(inclusionPoint.includingFile) &&
+            includeStmt.lineNumber === inclusionPoint.lineNumber
+          ) {
+            break;
+          }
+
+          // Add this include to the chain
+          executionChain.push(includeStmt);
+
+          // Recursively process the included file
+          processFile(includeStmt.resolvedFilePath);
+        }
+      } catch (error) {
+        this.logger.error(`Error processing file ${filePath}: ${error}`);
+      }
+    };
+
+    processFile(currentFile);
+  }
+
+  /**
+   * Add includes from the originating file up to cursor line
+   */
+  private addIncludesFromOriginatingFile(
+    originatingFile: string,
+    cursorLine: number,
+    executionChain: IncludeStatement[],
+  ): void {
+    try {
+      const fileContent = fs.readFileSync(originatingFile, "utf8");
+      const parsedTree = this.treeProvider.parseText(fileContent);
+
+      if (!parsedTree) {
+        return;
+      }
+
+      const includeStatements = this.findIncludeStatements(
+        parsedTree,
+        originatingFile,
+      );
+
+      // Only include statements up to the cursor line
+      const relevantIncludes = includeStatements.filter(
+        (include) => include.lineNumber <= cursorLine,
+      );
+
+      for (const includeStmt of relevantIncludes) {
+        executionChain.push(includeStmt);
+
+        // Recursively add all includes from this file
+        this.addAllIncludesFromFile(
+          includeStmt.resolvedFilePath,
+          executionChain,
+        );
+      }
+    } catch (error) {
+      this.logger.error(
+        `Error adding includes from ${originatingFile}: ${error}`,
+      );
+    }
+  }
+
+  /**
+   * Add all includes from a file (used for nested includes)
+   */
+  private addAllIncludesFromFile(
+    filePath: string,
+    executionChain: IncludeStatement[],
+  ): void {
+    const processedFiles = new Set<string>();
+
+    const processFile = (currentFilePath: string) => {
+      if (processedFiles.has(currentFilePath)) {
+        return;
+      }
+      processedFiles.add(currentFilePath);
+
+      try {
+        const fileContent = fs.readFileSync(currentFilePath, "utf8");
+        const parsedTree = this.treeProvider.parseText(fileContent);
+
+        if (!parsedTree) {
+          return;
+        }
+
+        const includeStatements = this.findIncludeStatements(
+          parsedTree,
+          currentFilePath,
+        );
+
+        for (const includeStmt of includeStatements) {
+          executionChain.push(includeStmt);
+          processFile(includeStmt.resolvedFilePath);
+        }
+      } catch (error) {
+        this.logger.error(`Error processing file ${currentFilePath}: ${error}`);
+      }
+    };
+
+    processFile(filePath);
   }
 
   /**
