@@ -11,6 +11,7 @@ const mockParseText = jest.fn();
 const mockGetTranslationKeyAtPosition = jest.fn();
 const mockFindTranslationDefinitionByKey = jest.fn();
 const mockGetTranslationKeyLocation = jest.fn();
+const mockGetIncludePathAtPosition = jest.fn();
 
 jest.mock("../src/treeSitterLiquidProvider", () => ({
   TreeSitterLiquidProvider: jest.fn().mockImplementation(() => ({
@@ -18,6 +19,7 @@ jest.mock("../src/treeSitterLiquidProvider", () => ({
     getTranslationKeyAtPosition: mockGetTranslationKeyAtPosition,
     findTranslationDefinitionByKey: mockFindTranslationDefinitionByKey,
     getTranslationKeyLocation: mockGetTranslationKeyLocation,
+    getIncludePathAtPosition: mockGetIncludePathAtPosition,
   })),
 }));
 
@@ -66,6 +68,7 @@ describe("DefinitionHandler", () => {
     mockGetTranslationKeyAtPosition.mockReturnValue(null);
     mockFindTranslationDefinitionByKey.mockReturnValue(null);
     mockGetTranslationKeyLocation.mockReturnValue(null);
+    mockGetIncludePathAtPosition.mockReturnValue(null);
 
     // Reset ScopeAwareProvider mocks
     mockFindScopedTranslationDefinition.mockReturnValue(null);

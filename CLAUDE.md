@@ -43,6 +43,7 @@ The language server is implemented in TypeScript and provides:
 
 ✅ **Translation Hover Information**: Shows all locale translations when hovering over `{% t 'key' %}` calls
 ✅ **Translation Go-to-Definition**: Navigate from translation calls to their definitions
+✅ **Include Go-to-Definition**: Navigate from `{% include 'parts/name' %}` statements to included files
 ✅ **Scope-Aware Translation Lookup**: Only shows translations that are "in scope" at cursor position
 ✅ **Cross-File Translation Search**: Searches across all related template files (main + text_parts)
 ✅ **Include Statement Processing**: Handles `{% include "parts/name" %}` statements and nested includes
@@ -51,7 +52,9 @@ The language server is implemented in TypeScript and provides:
 ✅ **Empty Translation Filtering**: Excludes empty locale values from hover information
 ✅ **Dynamic Template Structure**: Supports any template directory name with flexible config.json format
 ✅ **Parts/ Directory Mapping**: Maps `{% include "parts/any_name" %}` to `text_parts/any_name.liquid`
-✅ **Comprehensive Testing**: Full test coverage for all components (1000+ lines of tests)
+✅ **Config.json Path Resolution**: Uses config.json mappings for accurate file path resolution
+✅ **Clean Hover Behavior**: Only shows hover information for translation tags (no debug info)
+✅ **Comprehensive Testing**: Full test coverage for all components (122 tests, 100% passing)
 ✅ **Error Handling**: Graceful handling of parsing errors and missing definitions
 
 ## File Structure
@@ -160,6 +163,7 @@ SUMMARIZE any relevant information that can help yourself in future iterations o
 ALWAYS read the documentation you have in `claude/` directory before starting to work on the codebase, as it contains important information about the project and its structure.
 DEFINE types following the TypeScript conventions and the official LSP specifications.
 ALWAYS write test, run tests, run linter, run formatter, compile typescript before committing or submitting code.
+**KEEP README.md UPDATED**: Whenever you add new features, fix bugs, or make significant changes, update the `README.md` file to reflect the current capabilities and usage instructions for end users.
 
 ### Template Type Terminology
 

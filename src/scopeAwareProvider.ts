@@ -291,7 +291,7 @@ export class ScopeAwareProvider {
   /**
    * Resolve include path to actual file path using config.json mappings
    */
-  private resolveIncludePath(
+  public resolveIncludePath(
     includePath: string,
     templateDir: string,
   ): string | null {

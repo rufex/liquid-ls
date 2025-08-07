@@ -204,6 +204,38 @@ describe("TreeSitterLiquidProvider", () => {
     });
   });
 
+  describe("getIncludePathAtPosition", () => {
+    it("should detect include statement at cursor position", () => {
+      const content = `{% include 'parts/part_1' %}`;
+      const tree = provider.parseText(content);
+
+      if (tree) {
+        const includePath = provider.getIncludePathAtPosition(tree, 0, 15);
+        expect(includePath).toBe("parts/part_1");
+      }
+    });
+
+    it("should return null when not on include statement", () => {
+      const content = `<h1>Hello World</h1>`;
+      const tree = provider.parseText(content);
+
+      if (tree) {
+        const includePath = provider.getIncludePathAtPosition(tree, 0, 5);
+        expect(includePath).toBeNull();
+      }
+    });
+
+    it("should detect include statement with different quote styles", () => {
+      const content = `{% include "parts/part_1" %}`;
+      const tree = provider.parseText(content);
+
+      if (tree) {
+        const includePath = provider.getIncludePathAtPosition(tree, 0, 15);
+        expect(includePath).toBe("parts/part_1");
+      }
+    });
+  });
+
   describe("query functionality", () => {
     it("should execute queries without errors", () => {
       const text = "{% t 'test' %}";

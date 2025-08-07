@@ -2,6 +2,7 @@ import { HoverHandler } from "../src/hoverHandler";
 import { DefinitionHandler } from "../src/definitionHandler";
 import { HoverParams, DefinitionParams } from "vscode-languageserver/node";
 import * as path from "path";
+import * as fs from "fs";
 
 describe("Fixtures Integration Tests", () => {
   const fixturesPath = path.join(__dirname, "..", "fixtures", "market-repo");
@@ -639,6 +640,148 @@ describe("Fixtures Integration Tests", () => {
           "custom_directory/my_custom_part.liquid",
         );
         expect(result[0].range.start.line).toBe(0);
+      }
+    });
+  });
+
+  describe("Include Statement Go-to-Definition", () => {
+    it("should navigate to included file when clicking on include statement (AT)", async () => {
+      const at1Path = path.join(fixturesPath, "account_templates", "account_1");
+      const params: DefinitionParams = {
+        textDocument: {
+          uri: `file://${path.join(at1Path, "main.liquid")}`,
+        },
+        position: {
+          line: 0, // {% include 'parts/part_1' %}
+          character: 20, // Inside the include path string
+        },
+      };
+
+      const handler = new DefinitionHandler(params);
+      const result = await handler.handleDefinitionRequest();
+
+      expect(result).toBeDefined();
+      expect(Array.isArray(result)).toBe(true);
+      if (Array.isArray(result) && result.length > 0) {
+        expect(result[0].uri).toContain("part_1.liquid");
+        expect(result[0].range.start.line).toBe(0);
+        expect(result[0].range.start.character).toBe(0);
+      }
+    });
+
+    it("should navigate to included file when clicking on include statement (RT)", async () => {
+      const rtPath = path.join(
+        fixturesPath,
+        "reconciliation_texts",
+        "reconciliation_text_1",
+      );
+      const params: DefinitionParams = {
+        textDocument: {
+          uri: `file://${path.join(rtPath, "main.liquid")}`,
+        },
+        position: {
+          line: 0, // {% include 'parts/part_1' %}
+          character: 20, // Inside the include path string
+        },
+      };
+
+      const handler = new DefinitionHandler(params);
+      const result = await handler.handleDefinitionRequest();
+
+      expect(result).toBeDefined();
+      expect(Array.isArray(result)).toBe(true);
+      if (Array.isArray(result) && result.length > 0) {
+        expect(result[0].uri).toContain("part_1.liquid");
+        expect(result[0].range.start.line).toBe(0);
+        expect(result[0].range.start.character).toBe(0);
+      }
+    });
+
+    it("should navigate to nested included file (RT part includes another part)", async () => {
+      const rtPath = path.join(
+        fixturesPath,
+        "reconciliation_texts",
+        "reconciliation_text_1",
+      );
+      const params: DefinitionParams = {
+        textDocument: {
+          uri: `file://${path.join(rtPath, "text_parts", "part_1.liquid")}`,
+        },
+        position: {
+          line: 2, // {% include 'parts/part_2' %}
+          character: 20, // Inside the include path string
+        },
+      };
+
+      const handler = new DefinitionHandler(params);
+      const result = await handler.handleDefinitionRequest();
+
+      expect(result).toBeDefined();
+      expect(Array.isArray(result)).toBe(true);
+      if (Array.isArray(result) && result.length > 0) {
+        expect(result[0].uri).toContain("part_2.liquid");
+        expect(result[0].range.start.line).toBe(0);
+        expect(result[0].range.start.character).toBe(0);
+      }
+    });
+
+    it("should navigate to custom config.json defined include path", async () => {
+      const customPath = path.join(
+        fixturesPath,
+        "account_templates",
+        "account_custom",
+      );
+      const params: DefinitionParams = {
+        textDocument: {
+          uri: `file://${path.join(customPath, "main.liquid")}`,
+        },
+        position: {
+          line: 0, // {% include 'parts/custom_part' %}
+          character: 25, // Inside the include path string
+        },
+      };
+
+      const handler = new DefinitionHandler(params);
+      const result = await handler.handleDefinitionRequest();
+
+      expect(result).toBeDefined();
+      expect(Array.isArray(result)).toBe(true);
+      if (Array.isArray(result) && result.length > 0) {
+        // Should navigate to the custom path defined in config.json
+        expect(result[0].uri).toContain(
+          "custom_directory/my_custom_part.liquid",
+        );
+        expect(result[0].range.start.line).toBe(0);
+        expect(result[0].range.start.character).toBe(0);
+      }
+    });
+
+    it("should return null for non-existent include path", async () => {
+      const at1Path = path.join(fixturesPath, "account_templates", "account_1");
+
+      // Create a temporary file with a non-existent include
+      const tempContent = "{% include 'parts/non_existent_part' %}";
+      const tempFilePath = path.join(at1Path, "temp_test.liquid");
+      fs.writeFileSync(tempFilePath, tempContent);
+
+      try {
+        const params: DefinitionParams = {
+          textDocument: {
+            uri: `file://${tempFilePath}`,
+          },
+          position: {
+            line: 0,
+            character: 25,
+          },
+        };
+
+        const handler = new DefinitionHandler(params);
+        const result = await handler.handleDefinitionRequest();
+
+        expect(result).toBeNull();
+      } finally {
+        // Clean up temp file
+        fs.unlinkSync(tempFilePath);
       }
     });
   });

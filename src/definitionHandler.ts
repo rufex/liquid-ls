@@ -1,9 +1,11 @@
 import { TreeSitterLiquidProvider } from "./treeSitterLiquidProvider";
 import { ScopeAwareProvider } from "./scopeAwareProvider";
+import { RelatedFilesProvider } from "./relatedFilesProvider";
 import { Logger } from "./logger";
 import { DefinitionParams, Location, Range } from "vscode-languageserver/node";
 import { URI } from "vscode-uri";
 import * as fs from "fs";
+import * as path from "path";
 import * as Parser from "tree-sitter";
 
 export class DefinitionHandler {
@@ -12,6 +14,7 @@ export class DefinitionHandler {
   private logger: Logger;
   private provider: TreeSitterLiquidProvider;
   private scopeAwareProvider: ScopeAwareProvider;
+  private relatedFilesProvider: RelatedFilesProvider;
 
   constructor(params: DefinitionParams) {
     this.textDocumentUri = params.textDocument.uri;
@@ -19,6 +22,7 @@ export class DefinitionHandler {
     this.logger = new Logger("DefinitionHandler");
     this.provider = new TreeSitterLiquidProvider();
     this.scopeAwareProvider = new ScopeAwareProvider();
+    this.relatedFilesProvider = new RelatedFilesProvider();
 
     this.logger.logRequest("DefinitionHandler initialized", {
       uri: this.textDocumentUri,
@@ -48,7 +52,19 @@ export class DefinitionHandler {
       return null;
     }
 
-    // Check if this is a translation call
+    // First, check if this is an include statement
+    const includePath = this.provider.getIncludePathAtPosition(
+      parsedTree,
+      this.position.line,
+      this.position.character,
+    );
+
+    if (includePath) {
+      this.logger.debug(`Found include path: ${includePath}`);
+      return this.handleIncludeDefinition(includePath, filePath);
+    }
+
+    // Then, check if this is a translation call
     const translationKey = this.provider.getTranslationKeyAtPosition(
       parsedTree,
       this.position.line,
@@ -56,7 +72,9 @@ export class DefinitionHandler {
     );
 
     if (!translationKey) {
-      this.logger.debug("Position is not on a translation call");
+      this.logger.debug(
+        "Position is not on a translation call or include statement",
+      );
       return null;
     }
 
@@ -128,5 +146,51 @@ export class DefinitionHandler {
       this.logger.error(`Error calculating definition location: ${error}`);
       return null;
     }
+  }
+
+  private handleIncludeDefinition(
+    includePath: string,
+    currentFilePath: string,
+  ): Location[] | null {
+    // Find the main template file to get the correct template directory
+    const mainTemplateFile = this.relatedFilesProvider.getMainTemplateFile(
+      `file://${currentFilePath}`,
+    );
+
+    if (!mainTemplateFile) {
+      this.logger.debug(
+        `Could not find main template file for: ${currentFilePath}`,
+      );
+      return null;
+    }
+
+    // Use the directory of the main template file as the template directory
+    const templateDir = path.dirname(mainTemplateFile);
+    const resolvedPath = this.scopeAwareProvider.resolveIncludePath(
+      includePath,
+      templateDir,
+    );
+
+    if (!resolvedPath) {
+      this.logger.debug(
+        `Could not resolve include path: ${includePath} from template dir: ${templateDir}`,
+      );
+      return null;
+    }
+
+    this.logger.debug(
+      `Resolved include path: ${includePath} -> ${resolvedPath}`,
+    );
+
+    // Create location pointing to the first line of the included file
+    const location: Location = {
+      uri: `file://${resolvedPath}`,
+      range: {
+        start: { line: 0, character: 0 },
+        end: { line: 0, character: 0 },
+      },
+    };
+
+    return [location];
   }
 }

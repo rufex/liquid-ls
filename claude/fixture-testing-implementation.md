@@ -24,7 +24,7 @@ This document summarizes the comprehensive fixture-based testing implementation 
 
 ### 3. Comprehensive Test Suite
 
-- ✅ Created `test/fixtures-integration.test.ts` with 28 comprehensive tests
+- ✅ Created `test/fixtures-integration.test.ts` with 33 comprehensive tests
 - ✅ Covered all template types (AT, RT, EF) for both hover and go-to-definition functionality
 - ✅ Tested include scenarios:
   - Parts included in main templates
@@ -36,18 +36,24 @@ This document summarizes the comprehensive fixture-based testing implementation 
 - ✅ Added config.json path resolution tests:
   - Custom paths defined in config.json are correctly used
   - Verification that inference is not used when config.json exists
+- ✅ Added include go-to-definition tests:
+  - Navigate from main templates to included parts
+  - Navigate from parts to other parts (nested includes)
+  - Custom config.json path resolution for includes
+  - Error handling for non-existent includes
 - ✅ Added cross-template consistency tests
 - ✅ Included edge cases and error handling tests
 
-### 4. Implementation Fixes
+### 4. Implementation Fixes & New Features
 
+- ✅ **Added include go-to-definition**: Navigate from `{% include 'parts/name' %}` to the included file
 - ✅ **Fixed config.json path resolution**: `ScopeAwareProvider` now uses config.json mappings instead of inferring paths
 - ✅ **Cleaned up hover behavior**: Removed debug node information display, now only shows hover for translation tags
 - ✅ Corrected `ScopeAwareProvider.resolveIncludePath()` to handle only `parts/` prefix (plural)
 - ✅ Made name resolution flexible for any string after `parts/` (not just specific patterns)
 - ✅ Updated all fixture files to use correct `parts/` syntax
 - ✅ Fixed AT fixture to include proper nested include structure
-- ✅ All 114 tests now pass (100% success rate)
+- ✅ All 122 tests now pass (100% success rate)
 
 ## Test Coverage
 
@@ -126,24 +132,28 @@ All fixtures follow the pattern:
 
 ## Test Results
 
-- **Total Tests**: 114
-- **Passing Tests**: 114 (100%)
+- **Total Tests**: 122
+- **Passing Tests**: 122 (100%)
 - **Test Suites**: 8 (all passing)
-- **Coverage**: All template types, include scenarios, scope-aware behavior, config.json path resolution, and edge cases
+- **Coverage**: All template types, include scenarios, scope-aware behavior, config.json path resolution, include go-to-definition, and edge cases
 
 ## Files Modified
 
 1. `CLAUDE.md` - Added terminology and fixture documentation
 2. `src/scopeAwareProvider.ts` - **Fixed to use config.json path mappings instead of inference**
 3. `src/hoverHandler.ts` - **Cleaned up to only show hover for translation tags (removed debug node info)**
-4. `fixtures/market-repo/account_templates/account_1/text_parts/part_1.liquid` - Added nested include
-5. `fixtures/market-repo/account_templates/account_2/main.liquid` - Added out-of-scope test case
-6. `fixtures/market-repo/account_templates/account_2/text_parts/part_1.liquid` - Added translation definition for scope test
-7. `fixtures/market-repo/account_templates/account_3/main.liquid` - Added no-include test case
-8. `fixtures/market-repo/account_templates/account_3/text_parts/part_1.liquid` - Added translation definition for no-include test
-9. `fixtures/market-repo/account_templates/account_custom/` - **Added custom config.json path test case**
-10. `test/hoverHandler.test.ts` - Updated test to expect null for non-translation content
-11. `test/fixtures-integration.test.ts` - Comprehensive test suite with scope-aware behavior and config.json path resolution tests
+4. `src/treeSitterLiquidProvider.ts` - **Added include statement detection (`getIncludePathAtPosition`)**
+5. `src/definitionHandler.ts` - **Added include go-to-definition functionality**
+6. `fixtures/market-repo/account_templates/account_1/text_parts/part_1.liquid` - Added nested include
+7. `fixtures/market-repo/account_templates/account_2/main.liquid` - Added out-of-scope test case
+8. `fixtures/market-repo/account_templates/account_2/text_parts/part_1.liquid` - Added translation definition for scope test
+9. `fixtures/market-repo/account_templates/account_3/main.liquid` - Added no-include test case
+10. `fixtures/market-repo/account_templates/account_3/text_parts/part_1.liquid` - Added translation definition for no-include test
+11. `fixtures/market-repo/account_templates/account_custom/` - **Added custom config.json path test case**
+12. `test/hoverHandler.test.ts` - Updated test to expect null for non-translation content
+13. `test/definitionHandler.test.ts` - Updated mocks to include new include detection method
+14. `test/treeSitterLiquidProvider.test.ts` - **Added tests for include statement detection**
+15. `test/fixtures-integration.test.ts` - **Comprehensive test suite with include go-to-definition tests**
 
 ## Quality Assurance
 

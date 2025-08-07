@@ -223,4 +223,52 @@ export class TreeSitterLiquidProvider {
 
     return stringNodes.length > 0 ? stringNodes[0] : null;
   }
+
+  /**
+   * Get include path at a specific position in the document
+   * @param tree The parsed tree
+   * @param line Line number (0-based)
+   * @param character Character position (0-based)
+   * @returns Include path string or null if not found
+   */
+  getIncludePathAtPosition(
+    tree: Parser.Tree,
+    line: number,
+    character: number,
+  ): string | null {
+    const node = tree.rootNode.descendantForPosition({
+      row: line,
+      column: character,
+    });
+
+    // Look for include statement in the node hierarchy
+    let currentNode: Parser.SyntaxNode | null = node;
+    while (currentNode) {
+      if (currentNode.type === "include_statement") {
+        // Find the path string within the include statement
+        const pathNode = this.findIncludePathNode(currentNode);
+        if (pathNode) {
+          return this.extractTranslationKey(pathNode);
+        }
+      }
+      currentNode = currentNode.parent;
+    }
+
+    return null;
+  }
+
+  /**
+   * Find the path node within an include statement
+   */
+  private findIncludePathNode(
+    includeNode: Parser.SyntaxNode,
+  ): Parser.SyntaxNode | null {
+    // Look for string nodes that contain the include path
+    for (const child of includeNode.children) {
+      if (child.type === "string") {
+        return child;
+      }
+    }
+    return null;
+  }
 }
