@@ -1,0 +1,8 @@
+{
+  "text_parts": {
+    "definitions": "text_parts/definitions.liquid",
+    "references": "text_parts/references.liquid",
+    "nested": "text_parts/nested.liquid",
+    "shared_vars": "text_parts/shared_vars.liquid"
+  }
+}

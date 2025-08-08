@@ -1,0 +1,29 @@
+{% comment %} Loops Part - For loop variable scenarios {% endcomment %}
+
+{% comment %} Simple for loop with array {% endcomment %}
+{% assign colors = 'red,green,blue' | split: ',' %}
+{% for color in colors %}
+  <div class="{{ color }}">{{ color | capitalize }}</div>
+{% endfor %}
+
+{% comment %} Nested for loops {% endcomment %}
+{% assign categories = 'A,B,C' | split: ',' %}
+{% for category in categories %}
+  <h2>{{ category }}</h2>
+  {% for item in colors %}
+    <p>{{ category }}-{{ item }}</p>
+  {% endfor %}
+{% endfor %}
+
+{% comment %} For loop with range {% endcomment %}
+{% assign max_count = 3 %}
+{% for i in (1..max_count) %}
+  <span>Item {{ i }}</span>
+{% endfor %}
+
+{% comment %} Complex variable usage in loops {% endcomment %}
+{% assign loop_data = split_var %}
+{% for data_item in loop_data %}
+  {% assign processed_item = data_item | upcase %}
+  {{ processed_item }}
+{% endfor %}

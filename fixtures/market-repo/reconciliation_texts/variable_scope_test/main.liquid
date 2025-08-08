@@ -1,0 +1,25 @@
+{% comment %} Cross-File Variable Scope Test Fixture {% endcomment %}
+
+{% comment %} Main file variable definitions {% endcomment %}
+{% assign main_var = 'Defined in main.liquid' %}
+{% capture main_capture %}Main capture content{% endcapture %}
+
+{% comment %} Include parts that define more variables {% endcomment %}
+{% include 'parts/definitions' %}
+
+{% comment %} Variable references that should find definitions from included parts {% endcomment %}
+{{ part_var }}          <!-- Should find definition in definitions.liquid -->
+{{ nested_var }}        <!-- Should find definition in nested.liquid (via definitions.liquid) -->
+
+{% comment %} Include parts that reference variables {% endcomment %}
+{% include 'parts/references' %}
+
+{% comment %} Test variable precedence - local definitions override included ones {% endcomment %}
+{% assign override_var = 'Local override' %}
+{% include 'parts/shared_vars' %}
+
+{% comment %} Reference variables defined in various scopes {% endcomment %}
+{{ main_var }}          <!-- Local definition -->
+{{ main_capture }}      <!-- Local capture -->
+{{ shared_data }}       <!-- From shared_vars.liquid -->
+{{ override_var }}      <!-- Local override -->

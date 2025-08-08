@@ -66,7 +66,19 @@ export class DefinitionHandler {
       return this.handleIncludeDefinition(includePath, filePath);
     }
 
-    // Then, check if this is a translation call
+    // Then, check if this is a variable reference
+    const variableName = this.provider.getVariableAtPosition(
+      parsedTree,
+      this.position.line,
+      this.position.character,
+    );
+
+    if (variableName) {
+      this.logger.debug(`Found variable reference: ${variableName}`);
+      return this.handleVariableDefinition(variableName);
+    }
+
+    // Finally, check if this is a translation call
     const translationKey = this.provider.getTranslationKeyAtPosition(
       parsedTree,
       this.position.line,
@@ -75,7 +87,7 @@ export class DefinitionHandler {
 
     if (!translationKey) {
       this.logger.debug(
-        "Position is not on a translation call or include statement",
+        "Position is not on a translation call, variable reference, or include statement",
       );
       return null;
     }
@@ -148,6 +160,44 @@ export class DefinitionHandler {
       this.logger.error(`Error calculating definition location: ${error}`);
       return null;
     }
+  }
+
+  private handleVariableDefinition(variableName: string): Location[] | null {
+    this.logger.debug(`Searching for variable definition: ${variableName}`);
+
+    // Search for variable definition using scope-aware lookup
+    const definitionResult =
+      this.scopeAwareProvider.findScopedVariableDefinition(
+        this.textDocumentUri,
+        variableName,
+        this.position.line,
+      );
+
+    if (!definitionResult) {
+      this.logger.debug(`No definition found for variable: ${variableName}`);
+      return null;
+    }
+
+    // Get the precise location of the variable name within the definition
+    const variableNameNode = this.provider.getVariableNameLocation(
+      definitionResult.definition,
+    );
+    const targetNode = variableNameNode || definitionResult.definition;
+
+    // Calculate the location of the definition
+    const location = this.getDefinitionLocation(
+      targetNode,
+      definitionResult.filePath,
+    );
+
+    if (location) {
+      this.logger.debug(
+        `Found variable definition location: ${JSON.stringify(location)}`,
+      );
+      return [location];
+    }
+
+    return null;
   }
 
   private handleIncludeDefinition(

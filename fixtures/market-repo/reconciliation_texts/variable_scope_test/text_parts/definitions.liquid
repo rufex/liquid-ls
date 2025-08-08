@@ -1,0 +1,17 @@
+{% comment %} Variable Definitions Part {% endcomment %}
+
+{% comment %} Variables defined in this part {% endcomment %}
+{% assign part_var = 'Defined in definitions.liquid' %}
+{% assign shared_data = 'Original shared data' %}
+{% capture part_capture %}Part capture content{% endcapture %}
+
+{% comment %} Include nested part that defines more variables {% endcomment %}
+{% include 'parts/nested' %}
+
+{% comment %} Variables that reference main file variables {% endcomment %}
+{% assign derived_from_main = main_var | append: ' - extended in part' %}
+
+{% comment %} Output some variables to test scope {% endcomment %}
+{{ part_var }}
+{{ part_capture }}
+{{ derived_from_main }}

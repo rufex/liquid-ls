@@ -1,0 +1,21 @@
+{% comment %} Shared Variables Part - Tests precedence and overrides {% endcomment %}
+
+{% comment %} Define variables that might conflict with main file {% endcomment %}
+{% assign override_var = 'Defined in shared_vars.liquid' %}
+{% assign shared_data = 'Updated shared data from shared_vars' %}
+
+{% comment %} Variables unique to this part {% endcomment %}
+{% assign unique_to_shared = 'Only in shared_vars.liquid' %}
+{% capture shared_capture %}Shared capture{% endcapture %}
+
+{% comment %} Reference variables from other scopes {% endcomment %}
+<div class="shared">
+  <p>Override var: {{ override_var }}</p>
+  <p>Shared data: {{ shared_data }}</p>
+  <p>Main var: {{ main_var }}</p>
+  <p>Part var: {{ part_var }}</p>
+</div>
+
+{% comment %} Test variable precedence in assignments {% endcomment %}
+{% assign precedence_test = override_var | append: ' + ' | append: main_var %}
+{{ precedence_test }}

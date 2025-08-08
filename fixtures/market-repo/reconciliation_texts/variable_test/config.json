@@ -1,0 +1,7 @@
+{
+  "text_parts": {
+    "variables": "text_parts/variables.liquid",
+    "assignments": "text_parts/assignments.liquid",
+    "loops": "text_parts/loops.liquid"
+  }
+}

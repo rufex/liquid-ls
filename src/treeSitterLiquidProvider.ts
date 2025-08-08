@@ -271,4 +271,157 @@ export class TreeSitterLiquidProvider {
     }
     return null;
   }
+
+  // Variable assignment and reference methods
+
+  /**
+   * Find all variable definitions (assignments and captures) in the tree
+   */
+  findVariableDefinitions(tree: Parser.Tree): Parser.QueryMatch[] {
+    const queryString = `
+      [
+        (assignment_statement
+          variable_name: (identifier) @variable_name
+        )
+        (capture_statement
+          variable: (identifier) @variable_name
+        )
+        (for_loop_statement
+          item: (identifier) @variable_name
+        )
+      ]
+    `;
+    return this.query(queryString, tree);
+  }
+
+  /**
+   * Find variable references (standalone identifiers)
+   */
+  findVariableReferences(tree: Parser.Tree): Parser.SyntaxNode[] {
+    const identifiers = this.findNodes(tree, "identifier");
+    // Filter for identifiers that are standalone (direct children of program or block)
+    // or part of filter expressions (variable references in filters)
+    return identifiers.filter((node) => {
+      const parent = node.parent;
+      return (
+        parent?.type === "program" ||
+        parent?.type === "block" ||
+        (parent?.type === "filter" && parent.childForFieldName("body") === node)
+      );
+    });
+  }
+
+  /**
+   * Get variable name at a specific position
+   */
+  getVariableAtPosition(
+    tree: Parser.Tree,
+    row: number,
+    column: number,
+  ): string | null {
+    const node = tree.rootNode.descendantForPosition({ row, column });
+
+    // Check if we're on an identifier that could be a variable reference
+    if (node.type === "identifier") {
+      const parent = node.parent;
+      // Variable reference contexts:
+      // 1. Standalone identifier ({{ variable }})
+      // 2. Identifier in filter body (variable | filter)
+      // 3. Identifier in assignment value (assign x = variable)
+      // 4. Identifier as for loop iterator (for i in variable)
+      // 5. Bracket notation in assignment (assign [variable] = value)
+      if (
+        parent?.type === "program" ||
+        parent?.type === "block" ||
+        (parent?.type === "filter" &&
+          parent.childForFieldName("body") === node) ||
+        (parent?.type === "assignment_statement" &&
+          parent.childForFieldName("value") === node) ||
+        (parent?.type === "for_loop_statement" &&
+          parent.childForFieldName("iterator") === node) ||
+        (parent?.type === "assignment_statement" &&
+          parent.childForFieldName("variable_name") === node &&
+          this.isBracketNotation(node.text))
+      ) {
+        // For bracket notation, extract the variable name from [variable]
+        if (this.isBracketNotation(node.text)) {
+          return this.extractVariableFromBracketNotation(node.text);
+        }
+        return node.text;
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Check if a string represents bracket notation like [variable]
+   */
+  private isBracketNotation(text: string): boolean {
+    return text.startsWith("[") && text.endsWith("]") && text.length > 2;
+  }
+
+  /**
+   * Extract variable name from bracket notation [variable] -> variable
+   */
+  private extractVariableFromBracketNotation(text: string): string {
+    return text.slice(1, -1); // Remove [ and ]
+  }
+
+  /**
+   * Find variable definition by name
+   */
+  findVariableDefinitionByName(
+    tree: Parser.Tree,
+    variableName: string,
+  ): Parser.SyntaxNode | null {
+    const definitions = this.findVariableDefinitions(tree);
+
+    for (const match of definitions) {
+      for (const capture of match.captures) {
+        if (
+          capture.name === "variable_name" &&
+          capture.node.text === variableName
+        ) {
+          // Return the parent statement node
+          let parent = capture.node.parent;
+          while (
+            parent &&
+            parent.type !== "assignment_statement" &&
+            parent.type !== "capture_statement" &&
+            parent.type !== "for_loop_statement"
+          ) {
+            parent = parent.parent;
+          }
+          return parent;
+        }
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Get the precise location of the variable name within a definition
+   */
+  getVariableNameLocation(
+    definitionNode: Parser.SyntaxNode,
+  ): Parser.SyntaxNode | null {
+    // For assignment_statement, look for variable_name field
+    if (definitionNode.type === "assignment_statement") {
+      return definitionNode.childForFieldName("variable_name");
+    }
+
+    // For capture_statement, look for variable field
+    if (definitionNode.type === "capture_statement") {
+      return definitionNode.childForFieldName("variable");
+    }
+
+    // For for_loop_statement, look for item field
+    if (definitionNode.type === "for_loop_statement") {
+      return definitionNode.childForFieldName("item");
+    }
+
+    return null;
+  }
 }

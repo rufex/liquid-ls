@@ -164,4 +164,3 @@ Handles complex include hierarchies:
 <!-- text_parts/navigation.liquid -->
 {% t= 'nav_home' default:'Home' %}  ← Available in main.liquid
 ```
-

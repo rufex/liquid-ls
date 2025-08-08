@@ -1,0 +1,31 @@
+{% comment %} Variable Assignment Integration Test Fixture {% endcomment %}
+
+{% comment %} 1. Assignment Statement - Definition {% endcomment %}
+{% assign simple_var = 'Hello World' %}
+
+{% comment %} 2. Capture Statement - Definition {% endcomment %}
+{% capture complex_var %}Complex Content{% endcapture %}
+
+{% comment %} 3. For Loop Variable - Definition {% endcomment %}
+{% assign items = "a,b,c" | split: "," %}
+{% for loop_item in items %}
+  {% comment %} 4. Output Statement - Reference {% endcomment %}
+  {{ loop_item }}
+  
+  {% comment %} 5. Filter Body - Reference {% endcomment %}
+  {{ simple_var | upcase }}
+  
+  {% comment %} 6. Assignment Value - Reference {% endcomment %}
+  {% assign derived_var = complex_var %}
+  
+  {% comment %} 7. For Loop Iterator - Reference {% endcomment %}
+  {% comment %} items is referenced in the for loop above {% endcomment %}
+{% endfor %}
+
+{% comment %} 8. Bracket Notation - Reference {% endcomment %}
+{% assign [complex_var] = 'Bracket Assignment' %}
+
+{% comment %} Include parts with more variable examples {% endcomment %}
+{% include 'parts/variables' %}
+{% include 'parts/assignments' %}
+{% include 'parts/loops' %}

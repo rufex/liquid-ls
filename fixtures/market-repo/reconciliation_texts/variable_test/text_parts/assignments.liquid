@@ -1,0 +1,27 @@
+{% comment %} Assignments Part - Complex assignment scenarios {% endcomment %}
+
+{% comment %} String assignments {% endcomment %}
+{% assign string_var = 'String Value' %}
+{% assign quoted_var = "Double Quoted" %}
+
+{% comment %} Numeric assignments {% endcomment %}
+{% assign int_var = 100 %}
+{% assign float_var = 3.14 %}
+
+{% comment %} Filter assignments {% endcomment %}
+{% assign filtered_var = 'hello world' | capitalize %}
+{% assign split_var = 'one,two,three' | split: ',' %}
+
+{% comment %} References to variables from main.liquid {% endcomment %}
+{% assign main_reference = simple_var %}
+{% assign complex_reference = complex_var | truncate: 10 %}
+
+{% comment %} Output all variables {% endcomment %}
+{{ string_var }}
+{{ quoted_var }}
+{{ int_var }}
+{{ float_var }}
+{{ filtered_var }}
+{{ split_var }}
+{{ main_reference }}
+{{ complex_reference }}

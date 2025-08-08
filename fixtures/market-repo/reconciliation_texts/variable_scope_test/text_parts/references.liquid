@@ -1,0 +1,25 @@
+{% comment %} Variable References Part {% endcomment %}
+
+{% comment %} This part primarily references variables defined elsewhere {% endcomment %}
+
+{% comment %} Reference variables from main.liquid {% endcomment %}
+<h1>{{ main_var }}</h1>
+<p>{{ main_capture }}</p>
+
+{% comment %} Reference variables from definitions.liquid {% endcomment %}
+<div>{{ part_var }}</div>
+<span>{{ part_capture }}</span>
+
+{% comment %} Reference variables from nested.liquid {% endcomment %}
+<em>{{ nested_var }}</em>
+<strong>{{ nested_capture }}</strong>
+
+{% comment %} Use variables in complex expressions {% endcomment %}
+{% assign complex_ref = part_var | append: ' + ' | append: nested_var %}
+{{ complex_ref }}
+
+{% comment %} For loop using variables from other files {% endcomment %}
+{% assign items_from_nested = nested_items %}
+{% for item in items_from_nested %}
+  <li>{{ item }} (from {{ nested_var }})</li>
+{% endfor %}

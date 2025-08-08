@@ -318,4 +318,234 @@ describe("TreeSitterLiquidProvider", () => {
       expect(keyNode).toBeNull();
     });
   });
+
+  describe("variable functionality", () => {
+    const sampleLiquidWithVariables = `
+      {% for i in items %}
+        {{ i }}
+      {% endfor %}
+      
+      {% assign items = "item1,item2,item3" | split: "," %}
+      {{ items }}
+      
+      {% assign foo = 'car' %}
+      {{ foo }}
+      
+      {% assign bar = foo | append: 'bike' %}
+      
+      {% capture baz %}Text{% endcapture %}
+      {{ baz }}
+    `;
+
+    let tree: ReturnType<TreeSitterLiquidProvider["parseText"]>;
+
+    beforeEach(() => {
+      tree = provider.parseText(sampleLiquidWithVariables);
+    });
+
+    describe("findVariableDefinitions", () => {
+      it("should find all variable definitions", () => {
+        if (tree) {
+          const definitions = provider.findVariableDefinitions(tree);
+          expect(definitions.length).toBe(5); // i, items, foo, bar, baz
+
+          const variableNames = definitions.flatMap((match) =>
+            match.captures
+              .filter((capture) => capture.name === "variable_name")
+              .map((capture) => capture.node.text),
+          );
+
+          expect(variableNames).toContain("i");
+          expect(variableNames).toContain("items");
+          expect(variableNames).toContain("foo");
+          expect(variableNames).toContain("bar");
+          expect(variableNames).toContain("baz");
+        }
+      });
+    });
+
+    describe("findVariableReferences", () => {
+      it("should find variable references", () => {
+        if (tree) {
+          const references = provider.findVariableReferences(tree);
+          expect(references.length).toBeGreaterThan(0);
+
+          const referenceNames = references.map((node) => node.text);
+          expect(referenceNames).toContain("i");
+          expect(referenceNames).toContain("items");
+          expect(referenceNames).toContain("foo");
+          expect(referenceNames).toContain("baz");
+        }
+      });
+
+      it("should not include variable names from definitions", () => {
+        if (tree) {
+          const references = provider.findVariableReferences(tree);
+
+          // Check that references are not from assignment statements
+          references.forEach((node) => {
+            expect(node.parent?.type).not.toBe("assignment_statement");
+            expect(node.parent?.type).not.toBe("capture_statement");
+          });
+        }
+      });
+    });
+
+    describe("getVariableAtPosition", () => {
+      it("should detect variable reference in output statement", () => {
+        if (tree) {
+          // Test {{ items }} at line 6 (0-based indexing)
+          const variable = provider.getVariableAtPosition(tree, 6, 9);
+          expect(variable).toBe("items");
+        }
+      });
+
+      it("should detect variable reference in filter", () => {
+        if (tree) {
+          // Test foo in "foo | append: 'bike'" at line 11
+          const variable = provider.getVariableAtPosition(tree, 11, 22);
+          expect(variable).toBe("foo");
+        }
+      });
+
+      it("should return null for non-variable positions", () => {
+        if (tree) {
+          // Test position on "assign" keyword
+          const variable = provider.getVariableAtPosition(tree, 5, 7);
+          expect(variable).toBeNull();
+        }
+      });
+
+      it("should return null for variable definitions", () => {
+        if (tree) {
+          // Test position on variable name in assignment (should not be a reference)
+          const variable = provider.getVariableAtPosition(tree, 5, 16);
+          expect(variable).toBeNull();
+        }
+      });
+
+      it("should detect variable reference in for loop iterator", () => {
+        const forLoopContent = `
+          {% assign items = "a,b,c" | split: "," %}
+          {% for i in items %}
+            {{ i }}
+          {% endfor %}
+        `;
+        const forTree = provider.parseText(forLoopContent);
+
+        if (forTree) {
+          // Test 'items' in 'for i in items' at line 2
+          const variable = provider.getVariableAtPosition(forTree, 2, 22);
+          expect(variable).toBe("items");
+        }
+      });
+
+      it("should detect variable reference in bracket notation", () => {
+        const bracketContent = `
+          {% capture complex %}complex_key{% endcapture %}
+          {% assign [complex] = 'Complex value' %}
+        `;
+        const bracketTree = provider.parseText(bracketContent);
+
+        if (bracketTree) {
+          // Test 'complex' in '[complex]' at line 2
+          const variable = provider.getVariableAtPosition(bracketTree, 2, 20);
+          expect(variable).toBe("complex");
+        }
+      });
+    });
+
+    describe("findVariableDefinitionByName", () => {
+      it("should find assignment statement definition", () => {
+        if (tree) {
+          const definition = provider.findVariableDefinitionByName(
+            tree,
+            "items",
+          );
+          expect(definition).toBeDefined();
+          expect(definition?.type).toBe("assignment_statement");
+          expect(definition?.text).toContain("assign items =");
+        }
+      });
+
+      it("should find capture statement definition", () => {
+        if (tree) {
+          const definition = provider.findVariableDefinitionByName(tree, "baz");
+          expect(definition).toBeDefined();
+          expect(definition?.type).toBe("capture_statement");
+          expect(definition?.text).toContain("capture baz");
+        }
+      });
+
+      it("should find for loop variable definition", () => {
+        if (tree) {
+          const definition = provider.findVariableDefinitionByName(tree, "i");
+          expect(definition).toBeDefined();
+          expect(definition?.type).toBe("for_loop_statement");
+          expect(definition?.text).toContain("for i in");
+        }
+      });
+
+      it("should return null for non-existent variable", () => {
+        if (tree) {
+          const definition = provider.findVariableDefinitionByName(
+            tree,
+            "nonexistent",
+          );
+          expect(definition).toBeNull();
+        }
+      });
+    });
+
+    describe("getVariableNameLocation", () => {
+      it("should return variable name node from assignment statement", () => {
+        if (tree) {
+          const definition = provider.findVariableDefinitionByName(
+            tree,
+            "items",
+          );
+          if (definition) {
+            const nameNode = provider.getVariableNameLocation(definition);
+            expect(nameNode).toBeDefined();
+            expect(nameNode?.text).toBe("items");
+            expect(nameNode?.type).toBe("identifier");
+          }
+        }
+      });
+
+      it("should return variable name node from capture statement", () => {
+        if (tree) {
+          const definition = provider.findVariableDefinitionByName(tree, "baz");
+          if (definition) {
+            const nameNode = provider.getVariableNameLocation(definition);
+            expect(nameNode).toBeDefined();
+            expect(nameNode?.text).toBe("baz");
+            expect(nameNode?.type).toBe("identifier");
+          }
+        }
+      });
+
+      it("should return variable name node from for loop statement", () => {
+        if (tree) {
+          const definition = provider.findVariableDefinitionByName(tree, "i");
+          if (definition) {
+            const nameNode = provider.getVariableNameLocation(definition);
+            expect(nameNode).toBeDefined();
+            expect(nameNode?.text).toBe("i");
+            expect(nameNode?.type).toBe("identifier");
+          }
+        }
+      });
+
+      it("should return null for unsupported node types", () => {
+        const mockNode = {
+          type: "unsupported_type",
+          childForFieldName: jest.fn(() => null),
+        } as never;
+
+        const nameNode = provider.getVariableNameLocation(mockNode);
+        expect(nameNode).toBeNull();
+      });
+    });
+  });
 });

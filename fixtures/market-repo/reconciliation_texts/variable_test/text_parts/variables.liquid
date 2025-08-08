@@ -1,0 +1,19 @@
+{% comment %} Variables Part - More variable definitions and references {% endcomment %}
+
+{% comment %} Additional assignment definitions {% endcomment %}
+{% assign part_var = 'Part Variable' %}
+{% assign number_var = 42 %}
+
+{% comment %} Additional capture definitions {% endcomment %}
+{% capture dynamic_content %}
+  Generated at {{ 'now' | date: '%Y-%m-%d' }}
+{% endcapture %}
+
+{% comment %} Variable references in various contexts {% endcomment %}
+{{ part_var }}
+{{ number_var }}
+{{ dynamic_content }}
+
+{% comment %} Chained assignments {% endcomment %}
+{% assign chain_var = part_var | append: ' Extended' %}
+{{ chain_var }}

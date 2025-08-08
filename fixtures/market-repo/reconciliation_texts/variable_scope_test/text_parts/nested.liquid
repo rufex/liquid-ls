@@ -1,0 +1,16 @@
+{% comment %} Nested Variable Definitions Part {% endcomment %}
+
+{% comment %} Variables defined in this nested part {% endcomment %}
+{% assign nested_var = 'Defined in nested.liquid' %}
+{% capture nested_capture %}Nested capture content{% endcapture %}
+
+{% comment %} Array variable for testing loops {% endcomment %}
+{% assign nested_items = 'alpha,beta,gamma' | split: ',' %}
+
+{% comment %} Variables that depend on previously defined variables {% endcomment %}
+{% assign nested_derived = part_var | append: ' -> nested extension' %}
+
+{% comment %} Test variable scope within this nested context {% endcomment %}
+{{ nested_var }}
+{{ nested_capture }}
+{{ nested_derived }}

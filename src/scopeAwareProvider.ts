@@ -32,6 +32,18 @@ export interface TranslationDefinitionResult {
   content: string;
 }
 
+export interface VariableDefinitionResult {
+  definition: Parser.SyntaxNode;
+  filePath: string;
+  variableName: string;
+  lineNumber: number;
+}
+
+export interface MultipleVariableDefinitionsResult {
+  definitions: VariableDefinitionResult[];
+  variableName: string;
+}
+
 export class ScopeAwareProvider {
   private logger: Logger;
   private treeProvider: TreeSitterLiquidProvider;
@@ -43,6 +55,119 @@ export class ScopeAwareProvider {
     if (workspaceRoot) {
       this.sharedPartsProvider = new SharedPartsProvider(workspaceRoot);
     }
+  }
+
+  /**
+   * Find variable definition respecting Liquid execution scope
+   * @param fileUri URI of the current file
+   * @param variableName The variable name to find
+   * @param cursorLine The line number where the cursor is (0-based)
+   * @returns Variable definition result or null
+   */
+  public findScopedVariableDefinition(
+    fileUri: string,
+    variableName: string,
+    cursorLine: number,
+  ): VariableDefinitionResult | null {
+    this.logger.debug(
+      `Finding scoped variable '${variableName}' at line ${cursorLine} in ${fileUri}`,
+    );
+
+    const filePath = URI.parse(fileUri).fsPath;
+    const scopeContext = this.buildScopeContext(filePath, cursorLine);
+
+    this.logger.debug(
+      `Scope context: current file: ${scopeContext.currentFile}, line: ${scopeContext.currentLine}`,
+    );
+    this.logger.debug(
+      `Available includes: ${scopeContext.availableIncludes.length}`,
+    );
+    this.logger.debug(`Scoped files: ${scopeContext.scopedFiles.join(", ")}`);
+
+    // TODO: CRITICAL - This is a temporary implementation that doesn't correctly model
+    // Liquid execution order. We need to implement a proper ExecutionTimelineBuilder
+    // that builds a complete execution timeline to handle variable precedence correctly.
+    // See: claude/liquid-execution-order-specification.md
+    //
+    // Current approach: Search for ALL variable definitions, then return the MOST RECENT one
+    // This is incorrect for complex include scenarios and needs to be replaced.
+
+    const allDefinitions: Array<{
+      result: VariableDefinitionResult;
+      executionOrder: number;
+    }> = [];
+
+    // 1. Search current file up to cursor line (execution order based on line number)
+    const currentFileResult = this.searchVariableInCurrentFileScope(
+      scopeContext.currentFile,
+      variableName,
+      scopeContext.currentLine,
+    );
+
+    if (currentFileResult) {
+      allDefinitions.push({
+        result: currentFileResult,
+        executionOrder: currentFileResult.lineNumber,
+      });
+    }
+
+    // 2. Search included files (execution order based on include order + line number)
+    for (let i = 0; i < scopeContext.availableIncludes.length; i++) {
+      const includeStmt = scopeContext.availableIncludes[i];
+      const includedFileResult = this.searchVariableInIncludedFile(
+        includeStmt.resolvedFilePath,
+        variableName,
+      );
+
+      if (includedFileResult) {
+        // Execution order: include line number * 1000 + definition line number
+        // This ensures includes are processed after their include statement
+        const executionOrder =
+          includeStmt.lineNumber * 1000 + includedFileResult.lineNumber;
+        allDefinitions.push({
+          result: includedFileResult,
+          executionOrder: executionOrder,
+        });
+      }
+    }
+
+    // 3. If we're in a part file, search the main template file
+    const templateDir = this.getMainTemplateDirectory(
+      URI.parse(fileUri).fsPath,
+    );
+    const templateRoot = path.join(templateDir, "main.liquid");
+    const isPartFile =
+      path.resolve(scopeContext.currentFile) !== path.resolve(templateRoot);
+
+    if (isPartFile) {
+      const mainTemplateResult = this.searchVariableInIncludedFile(
+        templateRoot,
+        variableName,
+      );
+
+      if (mainTemplateResult) {
+        // Main template definitions have lower execution order (executed first)
+        allDefinitions.push({
+          result: mainTemplateResult,
+          executionOrder: mainTemplateResult.lineNumber - 10000,
+        });
+      }
+    }
+
+    // Return the definition with the HIGHEST execution order (most recent)
+    if (allDefinitions.length > 0) {
+      const mostRecentDefinition = allDefinitions.reduce((latest, current) =>
+        current.executionOrder > latest.executionOrder ? current : latest,
+      );
+
+      this.logger.debug(
+        `Found most recent variable definition in: ${mostRecentDefinition.result.filePath} (execution order: ${mostRecentDefinition.executionOrder})`,
+      );
+      return mostRecentDefinition.result;
+    }
+
+    this.logger.debug(`No scoped variable found for '${variableName}'`);
+    return null;
   }
 
   /**
@@ -74,7 +199,8 @@ export class ScopeAwareProvider {
 
     // Search in execution order:
     // 1. Current file (up to cursor line)
-    // 2. Included files (in inclusion order, all lines)
+    // 2. Main template file (if we're in a part file)
+    // 3. Included files (in inclusion order, all lines)
 
     // First, search current file up to cursor line
     const currentFileResult = this.searchInCurrentFileScope(
@@ -88,6 +214,29 @@ export class ScopeAwareProvider {
         `Found translation in current file: ${scopeContext.currentFile}`,
       );
       return currentFileResult;
+    }
+
+    // If we're in a part file, search the main template file
+    const templateDir = this.getMainTemplateDirectory(
+      URI.parse(fileUri).fsPath,
+    );
+    const templateRoot = path.join(templateDir, "main.liquid");
+    const isPartFile =
+      path.resolve(scopeContext.currentFile) !== path.resolve(templateRoot);
+
+    if (isPartFile) {
+      // Search main template file up to the point where this part was included
+      const mainTemplateResult = this.searchInIncludedFile(
+        templateRoot,
+        translationKey,
+      );
+
+      if (mainTemplateResult) {
+        this.logger.debug(
+          `Found translation in main template file: ${templateRoot}`,
+        );
+        return mainTemplateResult;
+      }
     }
 
     // Then search included files in order
@@ -737,6 +886,87 @@ export class ScopeAwareProvider {
       }
     } catch (error) {
       this.logger.error(`Error searching included file: ${error}`);
+    }
+
+    return null;
+  }
+
+  /**
+   * Search for variable in current file up to specified line
+   */
+  private searchVariableInCurrentFileScope(
+    filePath: string,
+    variableName: string,
+    maxLine: number,
+  ): VariableDefinitionResult | null {
+    try {
+      const fileContent = fs.readFileSync(filePath, "utf8");
+      const parsedTree = this.treeProvider.parseText(fileContent);
+
+      if (!parsedTree) {
+        return null;
+      }
+
+      // Find all variable definitions in the file
+      const definitions = this.treeProvider.findVariableDefinitions(parsedTree);
+
+      for (const match of definitions) {
+        for (const capture of match.captures) {
+          if (
+            capture.name === "variable_name" &&
+            capture.node.text === variableName
+          ) {
+            // Check if this definition is within scope (before cursor line)
+            if (capture.node.startPosition.row <= maxLine) {
+              return {
+                definition: capture.node,
+                filePath,
+                variableName,
+                lineNumber: capture.node.startPosition.row,
+              };
+            }
+          }
+        }
+      }
+    } catch (error) {
+      this.logger.error(
+        `Error searching current file scope for variable: ${error}`,
+      );
+    }
+
+    return null;
+  }
+
+  /**
+   * Search for variable in included file (all lines)
+   */
+  private searchVariableInIncludedFile(
+    filePath: string,
+    variableName: string,
+  ): VariableDefinitionResult | null {
+    try {
+      const fileContent = fs.readFileSync(filePath, "utf8");
+      const parsedTree = this.treeProvider.parseText(fileContent);
+
+      if (!parsedTree) {
+        return null;
+      }
+
+      const definition = this.treeProvider.findVariableDefinitionByName(
+        parsedTree,
+        variableName,
+      );
+
+      if (definition) {
+        return {
+          definition,
+          filePath,
+          variableName,
+          lineNumber: definition.startPosition.row,
+        };
+      }
+    } catch (error) {
+      this.logger.error(`Error searching included file for variable: ${error}`);
     }
 
     return null;

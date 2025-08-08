@@ -12,6 +12,9 @@ const mockGetTranslationKeyAtPosition = jest.fn();
 const mockFindTranslationDefinitionByKey = jest.fn();
 const mockGetTranslationKeyLocation = jest.fn();
 const mockGetIncludePathAtPosition = jest.fn();
+const mockGetVariableAtPosition = jest.fn();
+const mockFindVariableDefinitionByName = jest.fn();
+const mockGetVariableNameLocation = jest.fn();
 
 jest.mock("../src/treeSitterLiquidProvider", () => ({
   TreeSitterLiquidProvider: jest.fn().mockImplementation(() => ({
@@ -20,15 +23,20 @@ jest.mock("../src/treeSitterLiquidProvider", () => ({
     findTranslationDefinitionByKey: mockFindTranslationDefinitionByKey,
     getTranslationKeyLocation: mockGetTranslationKeyLocation,
     getIncludePathAtPosition: mockGetIncludePathAtPosition,
+    getVariableAtPosition: mockGetVariableAtPosition,
+    findVariableDefinitionByName: mockFindVariableDefinitionByName,
+    getVariableNameLocation: mockGetVariableNameLocation,
   })),
 }));
 
 // Mock the ScopeAwareProvider
 const mockFindScopedTranslationDefinition = jest.fn();
+const mockFindScopedVariableDefinition = jest.fn();
 
 jest.mock("../src/scopeAwareProvider", () => ({
   ScopeAwareProvider: jest.fn().mockImplementation(() => ({
     findScopedTranslationDefinition: mockFindScopedTranslationDefinition,
+    findScopedVariableDefinition: mockFindScopedVariableDefinition,
   })),
 }));
 
@@ -195,6 +203,246 @@ describe("DefinitionHandler", () => {
       await expect(handler.handleDefinitionRequest()).rejects.toThrow(
         "File not found",
       );
+    });
+  });
+
+  describe("variable definition handling", () => {
+    beforeEach(() => {
+      mockURI.parse = jest.fn().mockReturnValue({
+        fsPath: "/test.liquid",
+      });
+      mockGetIncludePathAtPosition.mockReturnValue(null);
+      mockGetTranslationKeyAtPosition.mockReturnValue(null);
+    });
+
+    it("should find variable definition for assignment", async () => {
+      const content = "{% assign foo = 'bar' %}\n{{ foo }}";
+      mockFs.readFileSync = jest.fn().mockReturnValue(content);
+      mockParseText.mockReturnValue({ rootNode: {} });
+      mockGetVariableAtPosition.mockReturnValue("foo");
+
+      const mockDefinitionNode = {
+        type: "assignment_statement",
+        text: "assign foo = 'bar'",
+        startPosition: { row: 0, column: 3 },
+        endPosition: { row: 0, column: 21 },
+      };
+
+      mockFindScopedVariableDefinition.mockReturnValue({
+        definition: mockDefinitionNode,
+        filePath: "/test.liquid",
+        variableName: "foo",
+        lineNumber: 0,
+      });
+
+      mockGetVariableNameLocation.mockReturnValue({
+        startPosition: { row: 0, column: 10 },
+        endPosition: { row: 0, column: 13 },
+      });
+
+      const handler = new DefinitionHandler(mockParams);
+      const result = await handler.handleDefinitionRequest();
+
+      expect(Array.isArray(result)).toBe(true);
+      expect(result).toHaveLength(1);
+      expect(result![0]).toHaveProperty("uri", "file:///test.liquid");
+      expect(result![0]).toHaveProperty("range");
+      expect(result![0].range.start).toEqual({ line: 0, character: 10 });
+      expect(result![0].range.end).toEqual({ line: 0, character: 13 });
+    });
+
+    it("should find variable definition for capture", async () => {
+      const content = "{% capture baz %}Text{% endcapture %}\n{{ baz }}";
+      mockFs.readFileSync = jest.fn().mockReturnValue(content);
+      mockParseText.mockReturnValue({ rootNode: {} });
+      mockGetVariableAtPosition.mockReturnValue("baz");
+
+      const mockDefinitionNode = {
+        type: "capture_statement",
+        text: "capture baz",
+        startPosition: { row: 0, column: 3 },
+        endPosition: { row: 0, column: 37 },
+      };
+
+      mockFindScopedVariableDefinition.mockReturnValue({
+        definition: mockDefinitionNode,
+        filePath: "/test.liquid",
+        variableName: "baz",
+        lineNumber: 0,
+      });
+
+      mockGetVariableNameLocation.mockReturnValue({
+        startPosition: { row: 0, column: 11 },
+        endPosition: { row: 0, column: 14 },
+      });
+
+      const handler = new DefinitionHandler(mockParams);
+      const result = await handler.handleDefinitionRequest();
+
+      expect(Array.isArray(result)).toBe(true);
+      expect(result).toHaveLength(1);
+      expect(result![0].range.start).toEqual({ line: 0, character: 11 });
+      expect(result![0].range.end).toEqual({ line: 0, character: 14 });
+    });
+
+    it("should find variable definition for for loop", async () => {
+      const content = "{% for i in items %}\n{{ i }}\n{% endfor %}";
+      mockFs.readFileSync = jest.fn().mockReturnValue(content);
+      mockParseText.mockReturnValue({ rootNode: {} });
+      mockGetVariableAtPosition.mockReturnValue("i");
+
+      const mockDefinitionNode = {
+        type: "for_loop_statement",
+        text: "for i in items",
+        startPosition: { row: 0, column: 3 },
+        endPosition: { row: 2, column: 12 },
+      };
+
+      mockFindScopedVariableDefinition.mockReturnValue({
+        definition: mockDefinitionNode,
+        filePath: "/test.liquid",
+        variableName: "i",
+        lineNumber: 0,
+      });
+
+      mockGetVariableNameLocation.mockReturnValue({
+        startPosition: { row: 0, column: 7 },
+        endPosition: { row: 0, column: 8 },
+      });
+
+      const handler = new DefinitionHandler(mockParams);
+      const result = await handler.handleDefinitionRequest();
+
+      expect(Array.isArray(result)).toBe(true);
+      expect(result).toHaveLength(1);
+      expect(result![0].range.start).toEqual({ line: 0, character: 7 });
+      expect(result![0].range.end).toEqual({ line: 0, character: 8 });
+    });
+
+    it("should return null when variable not found", async () => {
+      const content = "{{ nonexistent }}";
+      mockFs.readFileSync = jest.fn().mockReturnValue(content);
+      mockParseText.mockReturnValue({ rootNode: {} });
+      mockGetVariableAtPosition.mockReturnValue("nonexistent");
+      mockFindScopedVariableDefinition.mockReturnValue(null);
+
+      const handler = new DefinitionHandler(mockParams);
+      const result = await handler.handleDefinitionRequest();
+
+      expect(result).toBeNull();
+    });
+
+    it("should fallback to definition node when variable name location not found", async () => {
+      const content = "{% assign foo = 'bar' %}\n{{ foo }}";
+      mockFs.readFileSync = jest.fn().mockReturnValue(content);
+      mockParseText.mockReturnValue({ rootNode: {} });
+      mockGetVariableAtPosition.mockReturnValue("foo");
+
+      const mockDefinitionNode = {
+        type: "assignment_statement",
+        text: "assign foo = 'bar'",
+        startPosition: { row: 0, column: 3 },
+        endPosition: { row: 0, column: 21 },
+      };
+
+      mockFindScopedVariableDefinition.mockReturnValue({
+        definition: mockDefinitionNode,
+        filePath: "/test.liquid",
+        variableName: "foo",
+        lineNumber: 0,
+      });
+
+      mockGetVariableNameLocation.mockReturnValue(null);
+
+      const handler = new DefinitionHandler(mockParams);
+      const result = await handler.handleDefinitionRequest();
+
+      expect(Array.isArray(result)).toBe(true);
+      expect(result).toHaveLength(1);
+      expect(result![0].range.start).toEqual({ line: 0, character: 3 });
+      expect(result![0].range.end).toEqual({ line: 0, character: 21 });
+    });
+
+    it("should return null when no variable at position", async () => {
+      const content = "Hello World";
+      mockFs.readFileSync = jest.fn().mockReturnValue(content);
+      mockParseText.mockReturnValue({ rootNode: {} });
+      mockGetVariableAtPosition.mockReturnValue(null);
+
+      const handler = new DefinitionHandler(mockParams);
+      const result = await handler.handleDefinitionRequest();
+
+      expect(result).toBeNull();
+    });
+
+    it("should find variable definition for for loop iterator", async () => {
+      const content =
+        "{% assign items = 'a,b,c' | split: ',' %}\n{% for i in items %}\n{{ i }}\n{% endfor %}";
+      mockFs.readFileSync = jest.fn().mockReturnValue(content);
+      mockParseText.mockReturnValue({ rootNode: {} });
+      mockGetVariableAtPosition.mockReturnValue("items");
+
+      const mockDefinitionNode = {
+        type: "assignment_statement",
+        text: "assign items = 'a,b,c' | split: ','",
+        startPosition: { row: 0, column: 3 },
+        endPosition: { row: 0, column: 35 },
+      };
+
+      mockFindScopedVariableDefinition.mockReturnValue({
+        definition: mockDefinitionNode,
+        filePath: "/test.liquid",
+        variableName: "items",
+        lineNumber: 0,
+      });
+
+      mockGetVariableNameLocation.mockReturnValue({
+        startPosition: { row: 0, column: 10 },
+        endPosition: { row: 0, column: 15 },
+      });
+
+      const handler = new DefinitionHandler(mockParams);
+      const result = await handler.handleDefinitionRequest();
+
+      expect(Array.isArray(result)).toBe(true);
+      expect(result).toHaveLength(1);
+      expect(result![0].range.start).toEqual({ line: 0, character: 10 });
+      expect(result![0].range.end).toEqual({ line: 0, character: 15 });
+    });
+
+    it("should find variable definition for bracket notation", async () => {
+      const content =
+        "{% capture complex %}complex_key{% endcapture %}\n{% assign [complex] = 'Complex value' %}";
+      mockFs.readFileSync = jest.fn().mockReturnValue(content);
+      mockParseText.mockReturnValue({ rootNode: {} });
+      mockGetVariableAtPosition.mockReturnValue("complex");
+
+      const mockDefinitionNode = {
+        type: "capture_statement",
+        text: "capture complex",
+        startPosition: { row: 0, column: 3 },
+        endPosition: { row: 0, column: 47 },
+      };
+
+      mockFindScopedVariableDefinition.mockReturnValue({
+        definition: mockDefinitionNode,
+        filePath: "/test.liquid",
+        variableName: "complex",
+        lineNumber: 0,
+      });
+
+      mockGetVariableNameLocation.mockReturnValue({
+        startPosition: { row: 0, column: 11 },
+        endPosition: { row: 0, column: 18 },
+      });
+
+      const handler = new DefinitionHandler(mockParams);
+      const result = await handler.handleDefinitionRequest();
+
+      expect(Array.isArray(result)).toBe(true);
+      expect(result).toHaveLength(1);
+      expect(result![0].range.start).toEqual({ line: 0, character: 11 });
+      expect(result![0].range.end).toEqual({ line: 0, character: 18 });
     });
   });
 });
