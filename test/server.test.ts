@@ -5,6 +5,7 @@ jest.mock("vscode-languageserver/node");
 
 describe("LiquidLanguageServer", () => {
   let server: LiquidLanguageServer;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let mockConnection: any;
 
   beforeEach(() => {

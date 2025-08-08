@@ -10,6 +10,7 @@ import {
 } from "vscode-languageserver/node";
 
 import { TextDocument } from "vscode-languageserver-textdocument";
+import { Logger } from "./logger";
 
 export class LiquidLanguageServer {
   private connection: Connection;
@@ -18,14 +19,17 @@ export class LiquidLanguageServer {
   );
   private hasConfigurationCapability = false;
   private hasWorkspaceFolderCapability = false;
+  private logger: Logger;
 
   constructor(connection?: Connection) {
     this.connection = connection || createConnection(ProposedFeatures.all);
+    this.logger = new Logger("LiquidLanguageServer");
     this.setupHandlers();
   }
 
   private setupHandlers(): void {
     this.connection.onInitialize((params: InitializeParams) => {
+      this.logger.logRequest("initialize", params);
       const capabilities = params.capabilities;
 
       // Does the client support the `workspace/configuration` request?
@@ -48,10 +52,12 @@ export class LiquidLanguageServer {
           },
         };
       }
+      this.logger.logResponse("initialize", result);
       return result;
     });
 
     this.connection.onInitialized(() => {
+      this.logger.info("Server initialized");
       if (this.hasConfigurationCapability) {
         // Register for all configuration changes.
         this.connection.client.register(
@@ -61,6 +67,7 @@ export class LiquidLanguageServer {
       }
       if (this.hasWorkspaceFolderCapability) {
         this.connection.workspace.onDidChangeWorkspaceFolders((_event) => {
+          this.logger.info("Workspace folder change event received");
           this.connection.console.log(
             "Workspace folder change event received.",
           );
@@ -68,11 +75,13 @@ export class LiquidLanguageServer {
       }
     });
 
-    this.connection.onDidChangeConfiguration((_change) => {
+    this.connection.onDidChangeConfiguration((change) => {
+      this.logger.logRequest("didChangeConfiguration", change);
       this.connection.console.log("Configuration changed");
     });
 
-    this.connection.onDidChangeWatchedFiles((_change) => {
+    this.connection.onDidChangeWatchedFiles((change) => {
+      this.logger.logRequest("didChangeWatchedFiles", change);
       this.connection.console.log("File change event received");
     });
 
