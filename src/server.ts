@@ -3,22 +3,21 @@ import {
   TextDocuments,
   ProposedFeatures,
   InitializeParams,
-  DidChangeConfigurationNotification,
   TextDocumentSyncKind,
   InitializeResult,
   Connection,
+  Hover,
 } from "vscode-languageserver/node";
 
 import { TextDocument } from "vscode-languageserver-textdocument";
 import { Logger } from "./logger";
+import { HoverHandler } from "./hoverHandler";
 
 export class LiquidLanguageServer {
   private connection: Connection;
   private documents: TextDocuments<TextDocument> = new TextDocuments(
     TextDocument,
   );
-  private hasConfigurationCapability = false;
-  private hasWorkspaceFolderCapability = false;
   private logger: Logger;
 
   constructor(connection?: Connection) {
@@ -28,65 +27,50 @@ export class LiquidLanguageServer {
   }
 
   private setupHandlers(): void {
-    this.connection.onInitialize((params: InitializeParams) => {
-      this.logger.logRequest("initialize", params);
-      const capabilities = params.capabilities;
-
-      // Does the client support the `workspace/configuration` request?
-      this.hasConfigurationCapability = !!(
-        capabilities.workspace && !!capabilities.workspace.configuration
-      );
-      this.hasWorkspaceFolderCapability = !!(
-        capabilities.workspace && !!capabilities.workspace.workspaceFolders
-      );
+    this.connection.onInitialize((_params: InitializeParams) => {
+      // Currently nothing done with Client initial params
+      // const capabilities = params.capabilities;
 
       const result: InitializeResult = {
+        // Each capability defined needs a handler method e.g onHover
         capabilities: {
           textDocumentSync: TextDocumentSyncKind.Incremental,
+          hoverProvider: true,
         },
       };
-      if (this.hasWorkspaceFolderCapability) {
-        result.capabilities.workspace = {
-          workspaceFolders: {
-            supported: true,
-          },
-        };
-      }
-      this.logger.logResponse("initialize", result);
       return result;
     });
 
     this.connection.onInitialized(() => {
       this.logger.info("Server initialized");
-      if (this.hasConfigurationCapability) {
-        // Register for all configuration changes.
-        this.connection.client.register(
-          DidChangeConfigurationNotification.type,
-          undefined,
-        );
-      }
-      if (this.hasWorkspaceFolderCapability) {
-        this.connection.workspace.onDidChangeWorkspaceFolders((_event) => {
-          this.logger.info("Workspace folder change event received");
-          this.connection.console.log(
-            "Workspace folder change event received.",
-          );
-        });
-      }
     });
 
-    this.connection.onDidChangeConfiguration((change) => {
-      this.logger.logRequest("didChangeConfiguration", change);
-      this.connection.console.log("Configuration changed");
-    });
-
-    this.connection.onDidChangeWatchedFiles((change) => {
-      this.logger.logRequest("didChangeWatchedFiles", change);
+    this.connection.onDidChangeWatchedFiles((_change) => {
+      this.logger.logRequest("didChangeWatchedFiles");
       this.connection.console.log("File change event received");
     });
 
-    // Make the text document manager listen on the connection
-    // for open, change and close text document events
+    this.documents.onDidChangeContent((change) => {
+      this.logger.logRequest("didChangeContent");
+      this.connection.console.log(`didChangeContent: ${change.document.uri}`);
+    });
+
+    this.connection.onHover(async (params): Promise<Hover | null> => {
+      this.logger.logRequest("onHover", params);
+      this.connection.console.log(
+        `Hover request for: ${params.textDocument.uri}`,
+      );
+
+      const hoverHandler = new HoverHandler(params);
+      const response = await hoverHandler.handleHoverRequest();
+      if (response) {
+        return {
+          contents: response,
+        };
+      }
+      return null;
+    });
+
     this.documents.listen(this.connection);
   }
 
