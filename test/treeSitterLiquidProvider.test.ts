@@ -1,5 +1,6 @@
 /* eslint-disable quotes */
 import { TreeSitterLiquidProvider } from "../src/treeSitterLiquidProvider";
+import * as Parser from "tree-sitter";
 
 describe("TreeSitterLiquidProvider", () => {
   let provider: TreeSitterLiquidProvider;
@@ -545,6 +546,205 @@ describe("TreeSitterLiquidProvider", () => {
 
         const nameNode = provider.getVariableNameLocation(mockNode);
         expect(nameNode).toBeNull();
+      });
+    });
+  });
+
+  describe("Tag Documentation Methods", () => {
+    describe("getTagIdentifierAtPosition", () => {
+      it("should detect 'unreconciled' tag identifier at cursor position", () => {
+        const text = "{% unreconciled value unreconciled_text:text %}";
+        const tree = provider.parseText(text);
+
+        if (tree) {
+          // Position cursor on 'unreconciled' (position 3-14)
+          const tagIdentifier = provider.getTagIdentifierAtPosition(tree, 0, 5);
+          expect(tagIdentifier).toBe("unreconciled");
+        }
+      });
+
+      it("should detect 'result' tag identifier at cursor position", () => {
+        const text = "{% result 'accounts.current_year' %}";
+        const tree = provider.parseText(text);
+
+        if (tree) {
+          // Position cursor on 'result'
+          const tagIdentifier = provider.getTagIdentifierAtPosition(tree, 0, 4);
+          expect(tagIdentifier).toBe("result");
+        }
+      });
+
+      it("should return null when cursor is not on tag identifier", () => {
+        const text = "{% unreconciled value unreconciled_text:text %}";
+        const tree = provider.parseText(text);
+
+        if (tree) {
+          // Position cursor on 'value' (not the tag identifier)
+          const tagIdentifier = provider.getTagIdentifierAtPosition(
+            tree,
+            0,
+            18,
+          );
+          expect(tagIdentifier).toBeNull();
+        }
+      });
+
+      it("should return null when not inside a liquid_tag", () => {
+        const text = "This is plain text with unreconciled word";
+        const tree = provider.parseText(text);
+
+        if (tree) {
+          // Position cursor on 'unreconciled' in plain text
+          const tagIdentifier = provider.getTagIdentifierAtPosition(
+            tree,
+            0,
+            25,
+          );
+          expect(tagIdentifier).toBeNull();
+        }
+      });
+
+      it("should handle complex tag structures", () => {
+        const text =
+          "{% unreconciled accounts.current_year unreconciled_text:'Some text here' custom:true %}";
+        const tree = provider.parseText(text);
+
+        if (tree) {
+          // Position cursor on 'unreconciled'
+          const tagIdentifier = provider.getTagIdentifierAtPosition(tree, 0, 8);
+          expect(tagIdentifier).toBe("unreconciled");
+        }
+      });
+
+      it("should work with different liquid tag types", () => {
+        // Test only tags that we know return identifiers
+        const texts = [
+          "{% assign x = 5 %}", // Should return "assign"
+        ];
+
+        texts.forEach((text) => {
+          const tree = provider.parseText(text);
+          if (tree) {
+            // Position cursor on the tag identifier
+            const tagIdentifier = provider.getTagIdentifierAtPosition(
+              tree,
+              0,
+              4,
+            );
+            expect(typeof tagIdentifier).toBe("string");
+            expect(tagIdentifier?.length).toBeGreaterThan(0);
+          }
+        });
+      });
+
+      it("should return null for translation expressions", () => {
+        const text = "{% t 'translation_key' %}";
+        const tree = provider.parseText(text);
+
+        if (tree) {
+          // Position cursor on 't' - this is a translation expression, not a regular tag
+          const tagIdentifier = provider.getTagIdentifierAtPosition(tree, 0, 3);
+          expect(tagIdentifier).toBeNull();
+        }
+      });
+
+      it("should handle multiline tags", () => {
+        const text = `{%
+  unreconciled
+  accounts.current_year
+  unreconciled_text:'Text'
+%}`;
+        const tree = provider.parseText(text);
+
+        if (tree) {
+          // Position cursor on 'unreconciled' in second line
+          const tagIdentifier = provider.getTagIdentifierAtPosition(tree, 1, 5);
+          expect(tagIdentifier).toBe("unreconciled");
+        }
+      });
+
+      it("should be precise with cursor positioning", () => {
+        const text = "{% unreconciled value %}";
+        const tree = provider.parseText(text);
+
+        if (tree) {
+          // Test different positions within the tag identifier
+          expect(provider.getTagIdentifierAtPosition(tree, 0, 3)).toBe(
+            "unreconciled",
+          ); // Start of 'unreconciled'
+          expect(provider.getTagIdentifierAtPosition(tree, 0, 8)).toBe(
+            "unreconciled",
+          ); // Middle of 'unreconciled'
+          expect(provider.getTagIdentifierAtPosition(tree, 0, 14)).toBe(
+            "unreconciled",
+          ); // End of 'unreconciled'
+          expect(provider.getTagIdentifierAtPosition(tree, 0, 20)).toBeNull(); // Far after tag in 'value'
+        }
+      });
+
+      it("should handle edge cases", () => {
+        const tree = provider.parseText("");
+        if (tree) {
+          const tagIdentifier = provider.getTagIdentifierAtPosition(tree, 0, 0);
+          expect(tagIdentifier).toBeNull();
+        }
+      });
+    });
+
+    describe("tag detection helper methods", () => {
+      it("should correctly identify liquid statement context", () => {
+        const text = "{% unreconciled value %} plain text";
+        const tree = provider.parseText(text);
+
+        if (tree) {
+          // Test positions inside and outside liquid statement
+          const nodeInside = tree.rootNode.descendantForPosition({
+            row: 0,
+            column: 5,
+          });
+          const nodeOutside = tree.rootNode.descendantForPosition({
+            row: 0,
+            column: 30,
+          });
+
+          // We need to access the private method through casting
+          const providerAny = provider as unknown as {
+            isCustomLiquidStatement: (node: Parser.SyntaxNode) => boolean;
+          };
+          expect(providerAny.isCustomLiquidStatement(nodeInside)).toBe(true);
+          expect(providerAny.isCustomLiquidStatement(nodeOutside)).toBe(false);
+        }
+      });
+
+      it("should find tag identifier within liquid statement", () => {
+        const text = "{% result 'account' %}";
+        const tree = provider.parseText(text);
+
+        if (tree) {
+          const statementNode = tree.rootNode.descendantForPosition({
+            row: 0,
+            column: 5,
+          });
+
+          // Find the custom_unpaired_statement parent
+          let current = statementNode;
+          while (current && current.type !== "custom_unpaired_statement") {
+            current = current.parent!;
+          }
+
+          if (current) {
+            const providerAny = provider as unknown as {
+              findTagIdentifierInStatement: (
+                node: Parser.SyntaxNode,
+              ) => Parser.SyntaxNode | null;
+            };
+            const tagIdentifier =
+              providerAny.findTagIdentifierInStatement(current);
+            expect(tagIdentifier).not.toBeNull();
+            expect(tagIdentifier?.text).toBe("result");
+            expect(tagIdentifier?.type).toBe("custom_keyword");
+          }
+        }
       });
     });
   });

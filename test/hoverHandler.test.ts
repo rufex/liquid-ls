@@ -6,23 +6,28 @@ import { URI } from "vscode-uri";
 jest.mock("fs");
 jest.mock("vscode-uri");
 
-// Mock the TreeSitterLiquidProvider
+// Mock the TreeSitterLiquidProvider with shared instance
+const mockTreeSitterInstance = {
+  parseText: jest.fn().mockReturnValue({
+    rootNode: {
+      descendantForPosition: jest.fn().mockReturnValue({
+        text: "test",
+        type: "test_node",
+      }),
+    },
+  }),
+  getTranslationKeyAtPosition: jest.fn().mockReturnValue(null),
+  getTagIdentifierAtPosition: jest.fn().mockReturnValue(null),
+  findTranslationDefinitionByKey: jest.fn().mockReturnValue(null),
+  extractTranslationDefinitionContent: jest
+    .fn()
+    .mockReturnValue("test content"),
+};
+
 jest.mock("../src/treeSitterLiquidProvider", () => ({
-  TreeSitterLiquidProvider: jest.fn().mockImplementation(() => ({
-    parseText: jest.fn().mockReturnValue({
-      rootNode: {
-        descendantForPosition: jest.fn().mockReturnValue({
-          text: "test",
-          type: "test_node",
-        }),
-      },
-    }),
-    getTranslationKeyAtPosition: jest.fn().mockReturnValue(null),
-    findTranslationDefinitionByKey: jest.fn().mockReturnValue(null),
-    extractTranslationDefinitionContent: jest
-      .fn()
-      .mockReturnValue("test content"),
-  })),
+  TreeSitterLiquidProvider: jest
+    .fn()
+    .mockImplementation(() => mockTreeSitterInstance),
 }));
 
 // Mock the RelatedFilesProvider
@@ -31,6 +36,17 @@ jest.mock("../src/relatedFilesProvider", () => ({
     getAllTemplateFiles: jest.fn().mockReturnValue(["/test.liquid"]),
     getMainTemplateFile: jest.fn().mockReturnValue("/test.liquid"),
   })),
+}));
+
+// Mock the ScopeAwareProvider with shared instance
+const mockScopeAwareInstance = {
+  findScopedTranslationDefinition: jest.fn().mockReturnValue(null),
+};
+
+jest.mock("../src/scopeAwareProvider", () => ({
+  ScopeAwareProvider: jest
+    .fn()
+    .mockImplementation(() => mockScopeAwareInstance),
 }));
 
 describe("HoverHandler", () => {
@@ -202,6 +218,173 @@ describe("HoverHandler", () => {
       const result = await handler.handleHoverRequest();
 
       expect(typeof result === "string" || result === null).toBe(true);
+    });
+  });
+
+  describe("tag hover functionality", () => {
+    beforeEach(() => {
+      mockFs.readFileSync = jest
+        .fn()
+        .mockReturnValue("{% unreconciled value %}");
+      mockURI.parse = jest.fn().mockReturnValue({ fsPath: "/test.liquid" });
+    });
+
+    it("should return tag documentation for unreconciled tag", async () => {
+      // Mock that translation lookup returns null (no translation found)
+      mockTreeSitterInstance.getTranslationKeyAtPosition.mockReturnValue(null);
+      // Mock that tag identifier lookup returns 'unreconciled'
+      mockTreeSitterInstance.getTagIdentifierAtPosition.mockReturnValue(
+        "unreconciled",
+      );
+
+      const handler = new HoverHandler(mockParams);
+      const result = await handler.handleHoverRequest();
+
+      expect(result).not.toBeNull();
+      expect(result).toContain("**Tag:** `unreconciled`");
+      expect(result).toContain("**Documentation:**");
+      expect(result).toContain(
+        "https://developer.silverfin.com/docs/unreconciled",
+      );
+    });
+
+    it("should return tag documentation for result tag", async () => {
+      mockTreeSitterInstance.getTranslationKeyAtPosition.mockReturnValue(null);
+      mockTreeSitterInstance.getTagIdentifierAtPosition.mockReturnValue(
+        "result",
+      );
+
+      const handler = new HoverHandler(mockParams);
+      const result = await handler.handleHoverRequest();
+
+      expect(result).not.toBeNull();
+      expect(result).toContain("**Tag:** `result`");
+      expect(result).toContain("**Documentation:**");
+      expect(result).toContain("https://developer.silverfin.com/docs/result");
+    });
+
+    it("should return null for unknown tag", async () => {
+      mockTreeSitterInstance.getTranslationKeyAtPosition.mockReturnValue(null);
+      mockTreeSitterInstance.getTagIdentifierAtPosition.mockReturnValue(
+        "unknown_tag",
+      );
+
+      const handler = new HoverHandler(mockParams);
+      const result = await handler.handleHoverRequest();
+
+      expect(result).toBeNull();
+    });
+
+    it("should prioritize translation hover over tag hover", async () => {
+      // Mock both translation and tag identifier found
+      mockTreeSitterInstance.getTranslationKeyAtPosition.mockReturnValue(
+        "test_key",
+      );
+      mockTreeSitterInstance.getTagIdentifierAtPosition.mockReturnValue(
+        "unreconciled",
+      );
+
+      // Mock the scope aware provider to return a translation definition
+      mockScopeAwareInstance.findScopedTranslationDefinition.mockReturnValue({
+        content: "default: 'Test translation'",
+      });
+
+      const handler = new HoverHandler(mockParams);
+      const result = await handler.handleHoverRequest();
+
+      // Should return translation hover, not tag hover
+      expect(result).toContain("**Translation:** `test_key`");
+      expect(result).not.toContain("**Tag:** `unreconciled`");
+    });
+
+    it("should fall back to tag hover when no translation found", async () => {
+      mockTreeSitterInstance.getTranslationKeyAtPosition.mockReturnValue(
+        "test_key",
+      );
+      mockTreeSitterInstance.getTagIdentifierAtPosition.mockReturnValue(
+        "unreconciled",
+      );
+
+      // Mock scope aware provider to return null (no translation definition)
+      mockScopeAwareInstance.findScopedTranslationDefinition.mockReturnValue(
+        null,
+      );
+
+      const handler = new HoverHandler(mockParams);
+      const result = await handler.handleHoverRequest();
+
+      // Should return translation "not found" message, not tag hover
+      expect(result).toContain("**Translation:** `test_key`");
+      expect(result).toContain("**Status:** Definition not found");
+      expect(result).not.toContain("**Tag:** `unreconciled`");
+    });
+
+    it("should return null when neither translation nor tag found", async () => {
+      mockTreeSitterInstance.getTranslationKeyAtPosition.mockReturnValue(null);
+      mockTreeSitterInstance.getTagIdentifierAtPosition.mockReturnValue(null);
+
+      const handler = new HoverHandler(mockParams);
+      const result = await handler.handleHoverRequest();
+
+      expect(result).toBeNull();
+    });
+
+    it("should handle tag hover with complex tag content", async () => {
+      mockFs.readFileSync = jest
+        .fn()
+        .mockReturnValue(
+          "{% unreconciled accounts.current_year unreconciled_text:'Custom text' %}",
+        );
+      mockTreeSitterInstance.getTranslationKeyAtPosition.mockReturnValue(null);
+      mockTreeSitterInstance.getTagIdentifierAtPosition.mockReturnValue(
+        "unreconciled",
+      );
+
+      const handler = new HoverHandler(mockParams);
+      const result = await handler.handleHoverRequest();
+
+      expect(result).not.toBeNull();
+      expect(result).toContain("**Tag:** `unreconciled`");
+      expect(result).toContain(
+        "https://developer.silverfin.com/docs/unreconciled",
+      );
+    });
+
+    it("should handle multiline tag structures", async () => {
+      const multilineTag = `{%
+  result
+  'accounts.current_year'
+%}`;
+      mockFs.readFileSync = jest.fn().mockReturnValue(multilineTag);
+      mockTreeSitterInstance.getTranslationKeyAtPosition.mockReturnValue(null);
+      mockTreeSitterInstance.getTagIdentifierAtPosition.mockReturnValue(
+        "result",
+      );
+
+      const handler = new HoverHandler(mockParams);
+      const result = await handler.handleHoverRequest();
+
+      expect(result).not.toBeNull();
+      expect(result).toContain("**Tag:** `result`");
+      expect(result).toContain("https://developer.silverfin.com/docs/result");
+    });
+
+    it("should log appropriate debug messages for tag detection", async () => {
+      mockTreeSitterInstance.getTranslationKeyAtPosition.mockReturnValue(null);
+      mockTreeSitterInstance.getTagIdentifierAtPosition.mockReturnValue(
+        "unreconciled",
+      );
+
+      const handler = new HoverHandler(mockParams);
+      await handler.handleHoverRequest();
+
+      // Verify the methods were called
+      expect(
+        mockTreeSitterInstance.getTranslationKeyAtPosition,
+      ).toHaveBeenCalled();
+      expect(
+        mockTreeSitterInstance.getTagIdentifierAtPosition,
+      ).toHaveBeenCalled();
     });
   });
 });

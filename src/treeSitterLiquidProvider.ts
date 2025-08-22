@@ -424,4 +424,159 @@ export class TreeSitterLiquidProvider {
 
     return null;
   }
+
+  // Tag documentation methods
+
+  /**
+   * Get tag identifier at a specific position
+   * @param tree The parsed tree
+   * @param row Line number (0-based)
+   * @param column Character position (0-based)
+   * @returns Tag identifier string or null if not found
+   */
+  getTagIdentifierAtPosition(
+    tree: Parser.Tree,
+    row: number,
+    column: number,
+  ): string | null {
+    const node = tree.rootNode.descendantForPosition({ row, column });
+    this.logger.debug(
+      `Node at position ${row}:${column} - type: ${node.type}, text: "${node.text}"`,
+    );
+
+    // Check if the current node itself is a custom_keyword (tag identifier)
+    if (node.type === "custom_keyword") {
+      const tagName = node.text;
+      this.logger.debug(`Found custom_keyword tag identifier: "${tagName}"`);
+
+      // Check if cursor is positioned on this node
+      if (this.isPositionOnNode(node, row, column)) {
+        this.logger.debug(`Cursor is on tag identifier: "${tagName}"`);
+        return tagName;
+      }
+    }
+
+    // Also check other liquid statement types that might have tag identifiers
+    if (node.type === "assign" && this.isPositionOnNode(node, row, column)) {
+      this.logger.debug("Found assign tag identifier");
+      return "assign";
+    }
+
+    if (node.type === "capture" && this.isPositionOnNode(node, row, column)) {
+      this.logger.debug("Found capture tag identifier");
+      return "capture";
+    }
+
+    // Check if we're inside a custom_unpaired_statement
+    if (!this.isCustomLiquidStatement(node)) {
+      this.logger.debug("Node is not inside a liquid statement");
+      return null;
+    }
+
+    this.logger.debug("Node is inside a liquid statement");
+
+    // Find the statement parent node
+    let statementNode: Parser.SyntaxNode | null = node;
+    while (statementNode && !this.isStatementNode(statementNode)) {
+      statementNode = statementNode.parent;
+    }
+
+    if (!statementNode) return null;
+
+    // Find the tag identifier within the statement
+    const tagIdentifier = this.findTagIdentifierInStatement(statementNode);
+    if (tagIdentifier) {
+      const tagName = tagIdentifier.text;
+      this.logger.debug(`Found tag identifier in statement: "${tagName}"`);
+
+      // Check if cursor is positioned on the tag identifier
+      if (this.isPositionOnNode(tagIdentifier, row, column)) {
+        this.logger.debug(`Cursor is on tag identifier: "${tagName}"`);
+        return tagName;
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Check if a node is inside a custom liquid statement
+   */
+  private isCustomLiquidStatement(node: Parser.SyntaxNode): boolean {
+    let current: Parser.SyntaxNode | null = node;
+    while (current) {
+      if (this.isStatementNode(current)) {
+        return true;
+      }
+      current = current.parent;
+    }
+    return false;
+  }
+
+  /**
+   * Check if a node is a liquid statement node
+   */
+  private isStatementNode(node: Parser.SyntaxNode): boolean {
+    return (
+      node.type === "custom_unpaired_statement" ||
+      node.type === "assignment_statement" ||
+      node.type === "capture_statement" ||
+      node.type === "translation_statement" ||
+      node.type === "translation_expression"
+    );
+  }
+
+  /**
+   * Find the tag identifier within a liquid statement node
+   */
+  private findTagIdentifierInStatement(
+    statementNode: Parser.SyntaxNode,
+  ): Parser.SyntaxNode | null {
+    // For custom_unpaired_statement, look for custom_keyword
+    if (statementNode.type === "custom_unpaired_statement") {
+      for (const child of statementNode.children) {
+        if (child.type === "custom_keyword") {
+          return child;
+        }
+      }
+    }
+
+    // For assignment_statement, the tag is "assign"
+    if (statementNode.type === "assignment_statement") {
+      for (const child of statementNode.children) {
+        if (child.type === "assign") {
+          return child;
+        }
+      }
+    }
+
+    // For capture_statement, the tag is "capture"
+    if (statementNode.type === "capture_statement") {
+      for (const child of statementNode.children) {
+        if (child.type === "capture") {
+          return child;
+        }
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Check if a position is on a specific node
+   */
+  private isPositionOnNode(
+    node: Parser.SyntaxNode,
+    row: number,
+    column: number,
+  ): boolean {
+    const startPos = node.startPosition;
+    const endPos = node.endPosition;
+
+    return (
+      (row > startPos.row ||
+        (row === startPos.row && column >= startPos.column)) &&
+      (row < endPos.row || (row === endPos.row && column <= endPos.column))
+    );
+  }
 }

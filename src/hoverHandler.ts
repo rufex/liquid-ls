@@ -1,5 +1,6 @@
 import { TreeSitterLiquidProvider } from "./treeSitterLiquidProvider";
 import { ScopeAwareProvider } from "./scopeAwareProvider";
+import { TagDocumentationProvider } from "./tagDocumentationProvider";
 import { Logger } from "./logger";
 import { HoverParams } from "vscode-languageserver/node";
 import { URI } from "vscode-uri";
@@ -11,6 +12,7 @@ export class HoverHandler {
   private logger: Logger;
   private provider: TreeSitterLiquidProvider;
   private scopeAwareProvider: ScopeAwareProvider;
+  private tagDocumentationProvider: TagDocumentationProvider;
 
   constructor(params: HoverParams, workspaceRoot?: string | null) {
     this.textDocumentUri = params.textDocument.uri;
@@ -20,6 +22,7 @@ export class HoverHandler {
     this.scopeAwareProvider = new ScopeAwareProvider(
       workspaceRoot || undefined,
     );
+    this.tagDocumentationProvider = new TagDocumentationProvider();
 
     this.logger.logRequest("HoverHandler initialized", {
       uri: this.textDocumentUri,
@@ -94,7 +97,34 @@ export class HoverHandler {
       }
     }
 
-    // No hover information for non-translation content
+    // Check if this is a tag identifier for documentation
+    this.logger.debug(
+      `Checking for tag documentation at position ${this.position.line}:${this.position.character}`,
+    );
+    const tagIdentifier = this.provider.getTagIdentifierAtPosition(
+      parsedTree,
+      this.position.line,
+      this.position.character,
+    );
+
+    this.logger.debug(
+      `Tag identifier result: ${tagIdentifier ? `"${tagIdentifier}"` : "null"}`,
+    );
+
+    if (tagIdentifier) {
+      this.logger.debug(`Found tag identifier: ${tagIdentifier}`);
+
+      const tagHoverContent =
+        this.tagDocumentationProvider.getTagHoverContent(tagIdentifier);
+      if (tagHoverContent) {
+        this.logger.debug(`Found tag documentation for: ${tagIdentifier}`);
+        return tagHoverContent;
+      } else {
+        this.logger.debug(`No documentation found for tag: ${tagIdentifier}`);
+      }
+    }
+
+    // No hover information available
     return null;
   }
 }
