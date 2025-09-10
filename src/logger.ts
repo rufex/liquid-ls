@@ -39,6 +39,7 @@ export class Logger {
   public log(message: string): void {
     const formattedMessage = this.formatMessage(message);
     if (this.consoleLog) {
+      // eslint-disable-next-line no-console
       console.log(formattedMessage);
     } else {
       fs.appendFileSync(this.logFile, formattedMessage + "\n");
