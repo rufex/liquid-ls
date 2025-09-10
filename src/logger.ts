@@ -2,13 +2,20 @@ import * as fs from "fs";
 import * as path from "path";
 import * as os from "os";
 
+interface LoggerOptions {
+  consoleLog?: boolean;
+  filePath?: string;
+}
+
 export class Logger {
   private logFile: string;
   private className: string;
+  private consoleLog: boolean;
 
-  constructor(className: string, logFile?: string) {
+  constructor(className: string, options: LoggerOptions = {}) {
     this.className = className;
-    this.logFile = logFile || this.getDefaultLogFile();
+    this.consoleLog = options.consoleLog ?? false;
+    this.logFile = options.filePath || this.getDefaultLogFile();
     this.ensureLogDirectory();
   }
 
@@ -31,7 +38,11 @@ export class Logger {
 
   public log(message: string): void {
     const formattedMessage = this.formatMessage(message);
-    fs.appendFileSync(this.logFile, formattedMessage + "\n");
+    if (this.consoleLog) {
+      console.log(formattedMessage);
+    } else {
+      fs.appendFileSync(this.logFile, formattedMessage + "\n");
+    }
   }
 
   public info(message: string): void {

@@ -1,6 +1,7 @@
 import * as Parser from "tree-sitter";
 import * as LiquidTreeSitter from "tree-sitter-liquid";
 import { Logger } from "./logger";
+import { IncludeTagInfo } from "./types";
 
 export class TreeSitterLiquidProvider {
   private parser: Parser;
@@ -581,4 +582,61 @@ export class TreeSitterLiquidProvider {
       (row < endPos.row || (row === endPos.row && column <= endPos.column))
     );
   }
+
+  /**
+   * Find all include tags in the tree and return their type, name, and line number
+   * @param tree The parsed tree
+   * @returns Array of include tag information
+   */
+  findAllIncludeTags(tree: Parser.Tree): IncludeTagInfo[] {
+    const includeTags: IncludeTagInfo[] = [];
+
+    // Query for include statements
+    const queryString = `
+      (include_statement
+        (string) @include_path
+      )
+    `;
+
+    const matches = this.query(queryString, tree);
+
+    for (const match of matches) {
+      for (const capture of match.captures) {
+        if (capture.name === "include_path") {
+          const includePath = this.extractTranslationKey(capture.node);
+          const lineNumber = capture.node.startPosition.row; // 0-based line number
+
+          // Determine the type and name based on the include path
+          let type: "textPart" | "sharedPart";
+          let name: string;
+
+          if (includePath.startsWith("shared/")) {
+            type = "sharedPart";
+            name = includePath.substring(7); // Remove "shared/" prefix
+          } else if (includePath.startsWith("parts/")) {
+            type = "textPart";
+            name = includePath.substring(6); // Remove "parts/" prefix
+          } else {
+            // Default to textPart for other formats
+            type = "textPart";
+            name = includePath;
+          }
+
+          includeTags.push({
+            type,
+            name,
+            lineNumber,
+          });
+
+          this.logger.debug(
+            `Found include tag: "${includePath}" -> type: ${type}, name: ${name} at line ${lineNumber}`,
+          );
+        }
+      }
+    }
+
+    // Sort by line number to maintain document order
+    return includeTags.sort((a, b) => a.lineNumber - b.lineNumber);
+  }
 }
+

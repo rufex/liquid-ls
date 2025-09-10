@@ -1,7 +1,13 @@
-{% t "shared_translation_1" %}
-{% include 'parts/part_1' %}
-{% t "subtitle_t" %}
+{% comment %}
+This is an example template
+{% endcomment %}
 
-{% t "title_t" %}
+{% include 'parts/part_1' %} 
+
+{% t "title_t" %} {% comment %} defined in part_1.liquid {% endcomment %}
+
+{% t "subtitle_t" %} {% comment %} defined in part_2.liquid {% endcomment %}
+
+{% t "shared_translation_1" %} {% comment %} defined in shared_part_1.liquid {% endcomment %}
 
 

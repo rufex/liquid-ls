@@ -10,7 +10,7 @@ describe("Logger", () => {
     if (fs.existsSync(testLogFile)) {
       fs.unlinkSync(testLogFile);
     }
-    logger = new Logger("TestClass", testLogFile);
+    logger = new Logger("TestClass", { filePath: testLogFile });
   });
 
   afterEach(() => {
@@ -79,7 +79,7 @@ describe("Logger", () => {
 
   it("should create log directory if it doesn't exist", () => {
     const nestedLogFile = path.join(__dirname, "nested", "dir", "test.log");
-    const nestedLogger = new Logger("NestedTest", nestedLogFile);
+    const nestedLogger = new Logger("NestedTest", { filePath: nestedLogFile });
 
     nestedLogger.log("Test message");
 
