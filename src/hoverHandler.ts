@@ -1,6 +1,6 @@
 import { TreeSitterLiquidProvider } from "./treeSitterLiquidProvider";
 import { ScopeAwareProvider } from "./scopeAwareProvider";
-import { TagDocumentationProvider } from "./tagDocumentationProvider";
+import { DocumentationProvider } from "./documentationProvider";
 import { Logger } from "./logger";
 import { HoverParams } from "vscode-languageserver/node";
 import { URI } from "vscode-uri";
@@ -10,19 +10,19 @@ export class HoverHandler {
   private textDocumentUri: HoverParams["textDocument"]["uri"];
   private position: HoverParams["position"];
   private logger: Logger;
-  private provider: TreeSitterLiquidProvider;
+  private parser: TreeSitterLiquidProvider;
   private scopeAwareProvider: ScopeAwareProvider;
-  private tagDocumentationProvider: TagDocumentationProvider;
+  private documentationProvider: DocumentationProvider;
 
   constructor(params: HoverParams, workspaceRoot?: string | null) {
     this.textDocumentUri = params.textDocument.uri;
     this.position = params.position;
     this.logger = new Logger("HoverHandler");
-    this.provider = new TreeSitterLiquidProvider();
+    this.parser = new TreeSitterLiquidProvider();
     this.scopeAwareProvider = new ScopeAwareProvider(
       workspaceRoot || undefined,
     );
-    this.tagDocumentationProvider = new TagDocumentationProvider();
+    this.documentationProvider = new DocumentationProvider();
 
     this.logger.logRequest("HoverHandler initialized", {
       uri: this.textDocumentUri,
@@ -44,7 +44,7 @@ export class HoverHandler {
       return null;
     }
 
-    const parsedTree = this.provider.parseText(document);
+    const parsedTree = this.parser.parseText(document);
 
     if (!parsedTree) {
       this.logger.error("Failed to parse document with Tree-sitter");
@@ -55,18 +55,13 @@ export class HoverHandler {
       `Parsed tree structure: ${parsedTree.rootNode.toString()}`,
     );
 
-    const node = parsedTree.rootNode.descendantForPosition({
-      row: this.position.line,
-      column: this.position.character,
-    });
-
-    this.logger.debug(`Text: ${node.text} Type: ${node.type}`);
-
     // Check if this is a translation call
+
     this.logger.debug(
       `Checking for translation at position ${this.position.line}:${this.position.character}`,
     );
-    const translationKey = this.provider.getTranslationKeyAtPosition(
+
+    const translationKey = this.parser.getTranslationKeyAtPosition(
       parsedTree,
       this.position.line,
       this.position.character,
@@ -98,10 +93,11 @@ export class HoverHandler {
     }
 
     // Check if this is a tag identifier for documentation
+
     this.logger.debug(
       `Checking for tag documentation at position ${this.position.line}:${this.position.character}`,
     );
-    const tagIdentifier = this.provider.getTagIdentifierAtPosition(
+    const tagIdentifier = this.parser.getTagIdentifierAtPosition(
       parsedTree,
       this.position.line,
       this.position.character,
@@ -115,7 +111,7 @@ export class HoverHandler {
       this.logger.debug(`Found tag identifier: ${tagIdentifier}`);
 
       const tagHoverContent =
-        this.tagDocumentationProvider.getTagHoverContent(tagIdentifier);
+        this.documentationProvider.getTagHoverContent(tagIdentifier);
       if (tagHoverContent) {
         this.logger.debug(`Found tag documentation for: ${tagIdentifier}`);
         return tagHoverContent;

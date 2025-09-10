@@ -533,6 +533,8 @@ export class TreeSitterLiquidProvider {
     statementNode: Parser.SyntaxNode,
   ): Parser.SyntaxNode | null {
     // For custom_unpaired_statement, look for custom_keyword
+    // This are Silverfin custom tags like {% unreconciled %}, {% result %}, etc.
+    // That are not included yet in the tree-sitter-liquid grammar
     if (statementNode.type === "custom_unpaired_statement") {
       for (const child of statementNode.children) {
         if (child.type === "custom_keyword") {
@@ -541,20 +543,20 @@ export class TreeSitterLiquidProvider {
       }
     }
 
-    // For assignment_statement, the tag is "assign"
-    if (statementNode.type === "assignment_statement") {
-      for (const child of statementNode.children) {
-        if (child.type === "assign") {
-          return child;
-        }
-      }
-    }
+    // Identify tag identifiers for known statements
+    // NOTE: is this a redudant check?
+    const pairs = [
+      { assignment_statement: "assign" },
+      { capture_statement: "capture" },
+    ];
 
-    // For capture_statement, the tag is "capture"
-    if (statementNode.type === "capture_statement") {
-      for (const child of statementNode.children) {
-        if (child.type === "capture") {
-          return child;
+    for (const pair of pairs) {
+      const [nodeType, tagName] = Object.entries(pair)[0];
+      if (statementNode.type === nodeType) {
+        for (const child of statementNode.children) {
+          if (child.type === tagName) {
+            return child;
+          }
         }
       }
     }
