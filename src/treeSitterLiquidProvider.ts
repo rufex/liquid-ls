@@ -639,4 +639,3 @@ export class TreeSitterLiquidProvider {
     return includeTags.sort((a, b) => a.lineNumber - b.lineNumber);
   }
 }
-

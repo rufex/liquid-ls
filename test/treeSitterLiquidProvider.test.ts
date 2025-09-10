@@ -550,6 +550,228 @@ describe("TreeSitterLiquidProvider", () => {
     });
   });
 
+  describe("findAllIncludeTags", () => {
+    it("should find include tags with parts/ prefix", () => {
+      const content = `
+        {% include 'parts/header' %}
+        <h1>Title</h1>
+        {% include 'parts/footer' %}
+      `;
+      const tree = provider.parseText(content);
+
+      if (tree) {
+        const includeTags = provider.findAllIncludeTags(tree);
+        expect(includeTags).toHaveLength(2);
+
+        expect(includeTags[0]).toEqual({
+          type: "textPart",
+          name: "header",
+          lineNumber: 1,
+        });
+
+        expect(includeTags[1]).toEqual({
+          type: "textPart",
+          name: "footer",
+          lineNumber: 3,
+        });
+      }
+    });
+
+    it("should find include tags with shared/ prefix", () => {
+      const content = `
+        {% include 'shared/common_functions' %}
+        <p>Content</p>
+        {% include 'shared/utilities' %}
+      `;
+      const tree = provider.parseText(content);
+
+      if (tree) {
+        const includeTags = provider.findAllIncludeTags(tree);
+        expect(includeTags).toHaveLength(2);
+
+        expect(includeTags[0]).toEqual({
+          type: "sharedPart",
+          name: "common_functions",
+          lineNumber: 1,
+        });
+
+        expect(includeTags[1]).toEqual({
+          type: "sharedPart",
+          name: "utilities",
+          lineNumber: 3,
+        });
+      }
+    });
+
+    it("should handle mixed include types", () => {
+      const content = `
+        {% include 'parts/header' %}
+        {% include 'shared/utilities' %}
+        {% include 'parts/content' %}
+      `;
+      const tree = provider.parseText(content);
+
+      if (tree) {
+        const includeTags = provider.findAllIncludeTags(tree);
+        expect(includeTags).toHaveLength(3);
+
+        expect(includeTags[0]).toEqual({
+          type: "textPart",
+          name: "header",
+          lineNumber: 1,
+        });
+
+        expect(includeTags[1]).toEqual({
+          type: "sharedPart",
+          name: "utilities",
+          lineNumber: 2,
+        });
+
+        expect(includeTags[2]).toEqual({
+          type: "textPart",
+          name: "content",
+          lineNumber: 3,
+        });
+      }
+    });
+
+    it("should handle double quotes in include paths", () => {
+      const content = `{% include "parts/header" %}`;
+      const tree = provider.parseText(content);
+
+      if (tree) {
+        const includeTags = provider.findAllIncludeTags(tree);
+        expect(includeTags).toHaveLength(1);
+
+        expect(includeTags[0]).toEqual({
+          type: "textPart",
+          name: "header",
+          lineNumber: 0,
+        });
+      }
+    });
+
+    it("should handle include paths without prefixes", () => {
+      const content = `{% include 'simple_include' %}`;
+      const tree = provider.parseText(content);
+
+      if (tree) {
+        const includeTags = provider.findAllIncludeTags(tree);
+        expect(includeTags).toHaveLength(1);
+
+        expect(includeTags[0]).toEqual({
+          type: "textPart",
+          name: "simple_include",
+          lineNumber: 0,
+        });
+      }
+    });
+
+    it("should return empty array when no includes found", () => {
+      const content = `
+        <h1>Title</h1>
+        <p>No includes here</p>
+      `;
+      const tree = provider.parseText(content);
+
+      if (tree) {
+        const includeTags = provider.findAllIncludeTags(tree);
+        expect(includeTags).toHaveLength(0);
+      }
+    });
+
+    it("should sort include tags by line number", () => {
+      const content = `
+        Line 0
+        {% include 'parts/second' %}
+        Line 2
+        {% include 'parts/first' %}
+        Line 4
+        {% include 'parts/third' %}
+      `;
+      const tree = provider.parseText(content);
+
+      if (tree) {
+        const includeTags = provider.findAllIncludeTags(tree);
+        expect(includeTags).toHaveLength(3);
+
+        // Should be sorted by line number
+        expect(includeTags[0].lineNumber).toBe(2);
+        expect(includeTags[0].name).toBe("second");
+
+        expect(includeTags[1].lineNumber).toBe(4);
+        expect(includeTags[1].name).toBe("first");
+
+        expect(includeTags[2].lineNumber).toBe(6);
+        expect(includeTags[2].name).toBe("third");
+      }
+    });
+
+    it("should handle complex include paths", () => {
+      const content = `
+        {% include 'parts/nested/deep/file' %}
+        {% include 'shared/complex_name_with_underscores' %}
+      `;
+      const tree = provider.parseText(content);
+
+      if (tree) {
+        const includeTags = provider.findAllIncludeTags(tree);
+        expect(includeTags).toHaveLength(2);
+
+        expect(includeTags[0]).toEqual({
+          type: "textPart",
+          name: "nested/deep/file",
+          lineNumber: 1,
+        });
+
+        expect(includeTags[1]).toEqual({
+          type: "sharedPart",
+          name: "complex_name_with_underscores",
+          lineNumber: 2,
+        });
+      }
+    });
+
+    it("should handle includes within other liquid constructs", () => {
+      const content = `
+        {% if condition %}
+          {% include 'parts/conditional' %}
+        {% endif %}
+
+        {% for item in items %}
+          {% include 'parts/item_template' %}
+        {% endfor %}
+      `;
+      const tree = provider.parseText(content);
+
+      if (tree) {
+        const includeTags = provider.findAllIncludeTags(tree);
+        expect(includeTags).toHaveLength(2);
+
+        expect(includeTags[0]).toEqual({
+          type: "textPart",
+          name: "conditional",
+          lineNumber: 2,
+        });
+
+        expect(includeTags[1]).toEqual({
+          type: "textPart",
+          name: "item_template",
+          lineNumber: 6,
+        });
+      }
+    });
+
+    it("should handle empty tree gracefully", () => {
+      const tree = provider.parseText("");
+
+      if (tree) {
+        const includeTags = provider.findAllIncludeTags(tree);
+        expect(includeTags).toHaveLength(0);
+      }
+    });
+  });
+
   describe("Tag Documentation Methods", () => {
     describe("getTagIdentifierAtPosition", () => {
       it("should detect 'unreconciled' tag identifier at cursor position", () => {

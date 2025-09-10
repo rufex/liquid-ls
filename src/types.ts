@@ -34,4 +34,3 @@ export enum TemplateDirectories {
   exportFile = "export_files",
   accountTemplate = "account_templates",
 }
-
