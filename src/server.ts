@@ -32,7 +32,6 @@ export class LiquidLanguageServer {
 
   private setupHandlers(): void {
     this.connection.onInitialize((params: InitializeParams) => {
-      // Store workspace root for shared parts provider
       if (params.rootUri) {
         this.workspaceRoot = URI.parse(params.rootUri).fsPath;
         this.logger.info(`Workspace root: ${this.workspaceRoot}`);
@@ -42,9 +41,8 @@ export class LiquidLanguageServer {
       }
 
       const result: InitializeResult = {
-        // Each capability defined needs a handler method e.g onHover
         capabilities: {
-          textDocumentSync: TextDocumentSyncKind.Incremental,
+          textDocumentSync: TextDocumentSyncKind.Full,
           hoverProvider: true,
           definitionProvider: true,
         },
@@ -56,15 +54,15 @@ export class LiquidLanguageServer {
       this.logger.info("Server initialized");
     });
 
-    this.connection.onDidChangeWatchedFiles((_change) => {
-      this.logger.logRequest("didChangeWatchedFiles");
-      this.connection.console.log("File change event received");
-    });
-
-    this.documents.onDidChangeContent((change) => {
-      this.logger.logRequest("didChangeContent");
-      this.connection.console.log(`didChangeContent: ${change.document.uri}`);
-    });
+    // this.connection.onDidChangeWatchedFiles((_change) => {
+    //   this.logger.logRequest("didChangeWatchedFiles");
+    //   this.connection.console.log("File change event received");
+    // });
+    //
+    // this.documents.onDidChangeContent((change) => {
+    //   this.logger.logRequest("didChangeContent");
+    //   this.connection.console.log(`didChangeContent: ${change.document.uri}`);
+    // });
 
     this.connection.onHover(async (params): Promise<Hover | null> => {
       this.logger.logRequest("onHover", params);
