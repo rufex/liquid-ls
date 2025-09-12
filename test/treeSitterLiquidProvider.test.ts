@@ -737,7 +737,7 @@ describe("TreeSitterLiquidProvider", () => {
         {% if condition %}
           {% include 'parts/conditional' %}
         {% endif %}
-
+        
         {% for item in items %}
           {% include 'parts/item_template' %}
         {% endfor %}

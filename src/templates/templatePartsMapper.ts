@@ -2,6 +2,7 @@ import { Logger } from "../logger";
 import * as fs from "fs";
 import * as path from "path";
 import { TreeSitterLiquidProvider } from "../liquid/treeSitterLiquidProvider";
+import { IncludeParser } from "../liquid/includeParser";
 import {
   TemplateTypes,
   TemplateParts,
@@ -71,9 +72,8 @@ export class TemplatePartsMapper {
       return null;
     }
 
-    const processedFiles = new Set<string>(); // Prevent circular includes
-
     // Start recursive processing with main template
+    const processedFiles = new Set<string>(); // Prevent circular includes
     this.processLiquidFileRecursively(
       mainTemplatePath,
       "main",
@@ -105,7 +105,6 @@ export class TemplatePartsMapper {
     orderedTemplateParts: TemplateParts,
     processedFiles: Set<string>,
   ): void {
-    // Prevent circular includes
     if (processedFiles.has(filePath)) {
       this.logger.warn(`Circular include detected: ${filePath}`);
       return;
@@ -120,15 +119,10 @@ export class TemplatePartsMapper {
     this.logger.debug(`Processing file: ${filePath}`);
 
     const fileContent = fs.readFileSync(filePath, "utf-8");
-    const tree = this.parser.parseText(fileContent);
-
-    if (!tree) {
-      this.logger.error(`Failed to parse template: ${filePath}`);
-      return;
-    }
-
-    const includeTags = this.parser.findAllIncludeTags(tree);
     const totalLines = fileContent.split("\n").length;
+
+    const transitionParser = new IncludeParser();
+    const includeTags = transitionParser.findAll(fileContent);
 
     // Process includes and create template parts in order
     let currentStartLine = 0; // 0-based indexing
@@ -136,7 +130,6 @@ export class TemplatePartsMapper {
     for (const includeTag of includeTags) {
       const includeLineNumber = includeTag.lineNumber; // Already 0-based from TreeSitter
 
-      // Add template part before the include (if there are lines before it)
       if (currentStartLine < includeLineNumber) {
         orderedTemplateParts.push({
           fileFullPath: filePath,

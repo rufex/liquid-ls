@@ -1,21 +1,21 @@
-import { TranslationsProvider } from "../src/liquid/translationsProvider";
+import { TranslationParser } from "../src/liquid/translationParser";
 import * as fs from "fs";
 import * as path from "path";
 
-describe("TranslationsProvider", () => {
-  let provider: TranslationsProvider;
+describe("TranslationParser", () => {
+  let provider: TranslationParser;
   const fixturesPath = path.join(__dirname, "../fixtures/market-repo");
 
   beforeEach(() => {
-    provider = new TranslationsProvider();
+    provider = new TranslationParser();
   });
 
-  describe("isTranslationStatement", () => {
+  describe("isTranslationExpression", () => {
     it("should return translation_statement node when cursor is on translation definition", () => {
       const content = '{% t="title_t" default:"Title" es:"Título" %}';
 
       // Test cursor on the key
-      const result = provider.isTranslationStatement(content, 0, 6);
+      const result = provider.isTranslationExpression(content, 0, 6);
 
       expect(result).not.toBeNull();
       expect(result?.type).toBe("translation_statement");
@@ -33,7 +33,7 @@ describe("TranslationsProvider", () => {
       ];
 
       positions.forEach(({ line, column }) => {
-        const result = provider.isTranslationStatement(content, line, column);
+        const result = provider.isTranslationExpression(content, line, column);
         expect(result).not.toBeNull();
         expect(result?.type).toBe("translation_statement");
       });
@@ -47,11 +47,11 @@ describe("TranslationsProvider", () => {
       `;
 
       // Test cursor on assign statement (line 1)
-      const result = provider.isTranslationStatement(content, 1, 15);
+      const result = provider.isTranslationExpression(content, 1, 15);
       expect(result).toBeNull();
 
       // Test cursor on output statement (line 3)
-      const result2 = provider.isTranslationStatement(content, 3, 5);
+      const result2 = provider.isTranslationExpression(content, 3, 5);
       expect(result2).toBeNull();
     });
 
@@ -63,7 +63,7 @@ describe("TranslationsProvider", () => {
       const content = fs.readFileSync(filePath, "utf-8");
 
       // Line 0 contains: {% t="title_t" default:"Title" es:"Título" %}
-      const result = provider.isTranslationStatement(content, 0, 5);
+      const result = provider.isTranslationExpression(content, 0, 5);
 
       expect(result).not.toBeNull();
       expect(result?.type).toBe("translation_statement");
@@ -77,7 +77,7 @@ describe("TranslationsProvider", () => {
       const content = fs.readFileSync(filePath, "utf-8");
 
       // Line 0 contains: {% t= "shared_translation_1" default:"Shared Translation 1" nl:"Gedeelde Vertaling 1" %}
-      const result = provider.isTranslationStatement(content, 0, 10);
+      const result = provider.isTranslationExpression(content, 0, 10);
 
       expect(result).not.toBeNull();
       expect(result?.type).toBe("translation_statement");
@@ -90,12 +90,12 @@ describe("TranslationsProvider", () => {
         More content
       `;
 
-      const result = provider.isTranslationStatement(content, 2, 15);
+      const result = provider.isTranslationExpression(content, 2, 15);
       expect(result).not.toBeNull();
       expect(result?.type).toBe("translation_statement");
 
       // Test line without translation
-      const result2 = provider.isTranslationStatement(content, 1, 5);
+      const result2 = provider.isTranslationExpression(content, 1, 5);
       expect(result2).toBeNull();
     });
   });
@@ -229,7 +229,7 @@ describe("TranslationsProvider", () => {
     it("should handle malformed liquid syntax gracefully", () => {
       const malformedContent = "{% t incomplete";
 
-      const isTransResult = provider.isTranslationStatement(
+      const isTransResult = provider.isTranslationExpression(
         malformedContent,
         0,
         5,
@@ -241,14 +241,14 @@ describe("TranslationsProvider", () => {
     });
 
     it("should handle out of bounds positions", () => {
-      const content = '{% t "key" %}';
+      const content = "{% t "key" %}";
 
       // Line out of bounds
-      const result1 = provider.isTranslationStatement(content, 10, 0);
+      const result1 = provider.isTranslationExpression(content, 10, 0);
       expect(result1).toBeNull();
 
       // Column out of bounds should still work (TreeSitter handles this)
-      const result2 = provider.isTranslationStatement(content, 0, 1000);
+      const result2 = provider.isTranslationExpression(content, 0, 1000);
       expect(result2).not.toBeNull(); // TreeSitter finds closest valid position
     });
   });
