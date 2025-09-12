@@ -16,6 +16,7 @@ export type TemplateTypes =
 export type TemplatePartType = "main" | "textPart" | "sharedPart";
 
 export interface TemplatePart {
+  fileFullPath: string;
   type: TemplatePartType;
   name: string;
   startLine: number; // 0-based, inclusive

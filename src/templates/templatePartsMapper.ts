@@ -139,6 +139,7 @@ export class TemplatePartsMapper {
       // Add template part before the include (if there are lines before it)
       if (currentStartLine < includeLineNumber) {
         orderedTemplateParts.push({
+          fileFullPath: filePath,
           type: partType,
           name: partName,
           startLine: currentStartLine,
@@ -169,6 +170,7 @@ export class TemplatePartsMapper {
     // Add the remaining part of the file (after last include or whole file if no includes)
     if (currentStartLine < totalLines) {
       orderedTemplateParts.push({
+        fileFullPath: filePath,
         type: partType,
         name: partName,
         startLine: currentStartLine,
