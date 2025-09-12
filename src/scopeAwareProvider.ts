@@ -1,4 +1,4 @@
-import { TreeSitterLiquidProvider } from "./treeSitterLiquidProvider";
+import { TreeSitterLiquidProvider } from "./liquid/treeSitterLiquidProvider";
 import { Logger } from "./logger";
 import { URI } from "vscode-uri";
 import * as fs from "fs";

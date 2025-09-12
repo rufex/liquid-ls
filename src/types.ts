@@ -24,7 +24,9 @@ export interface TemplatePart {
 
 export type TemplateParts = TemplatePart[];
 
-export type TemplateCollection = Map<string, TemplateParts>;
+export type TemplateKey = `${TemplateTypes}/${string}`; // e.g., "reconciliationText/handle"
+
+export type TemplateCollection = Map<TemplateKey, TemplateParts>;
 
 // Template directories relative to workspace root
 // Type > directory

@@ -1,14 +1,14 @@
-import { Logger } from "./logger";
+import { Logger } from "../logger";
 import * as fs from "fs";
 import * as path from "path";
-import { TreeSitterLiquidProvider } from "./treeSitterLiquidProvider";
+import { TreeSitterLiquidProvider } from "../liquid/treeSitterLiquidProvider";
 import {
   TemplateTypes,
   TemplateParts,
   IncludeTagInfo,
   TemplatePartType,
   TemplateDirectories,
-} from "./types";
+} from "../types";
 
 /**
  * Class to map out the parts of a Liquid template, including main, text parts, and shared parts.

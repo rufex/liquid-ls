@@ -13,8 +13,8 @@ import {
 import { TextDocument } from "vscode-languageserver-textdocument";
 import { URI } from "vscode-uri";
 import { Logger } from "./logger";
-import { HoverHandler } from "./hoverHandler";
-import { DefinitionHandler } from "./definitionHandler";
+import { HoverHandler } from "./lspCapabilities/hoverHandler";
+import { DefinitionHandler } from "./lspCapabilities/definitionHandler";
 
 export class LiquidLanguageServer {
   private connection: Connection;

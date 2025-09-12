@@ -1,7 +1,7 @@
-import { TreeSitterLiquidProvider } from "./treeSitterLiquidProvider";
-import { ScopeAwareProvider } from "./scopeAwareProvider";
+import { TreeSitterLiquidProvider } from "../liquid/treeSitterLiquidProvider";
+import { ScopeAwareProvider } from "../scopeAwareProvider";
 import { DocumentationProvider } from "./documentationProvider";
-import { Logger } from "./logger";
+import { Logger } from "../logger";
 import { HoverParams } from "vscode-languageserver/node";
 import { URI } from "vscode-uri";
 import * as fs from "fs";

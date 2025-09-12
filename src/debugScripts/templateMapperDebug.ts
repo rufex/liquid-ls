@@ -1,4 +1,4 @@
-import { TemplatePartsMapper } from "../templatePartsMapper";
+import { TemplatePartsMapper } from "../templates/templatePartsMapper";
 import * as path from "path";
 
 const workspaceRoot = path.join(__dirname, "../../fixtures/market-repo");
