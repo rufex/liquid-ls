@@ -13,8 +13,8 @@ import {
 import { TextDocument } from "vscode-languageserver-textdocument";
 import { URI } from "vscode-uri";
 import { Logger } from "./logger";
-import { HoverHandler } from "./lspCapabilities/hoverHandler";
-import { DefinitionHandler } from "./lspCapabilities/definitionHandler";
+import { HoverProvider } from "./lspCapabilities/hoverProvider";
+import { DefinitionProvider } from "./lspCapabilities/definitionProvider";
 
 export class LiquidLanguageServer {
   private connection: Connection;
@@ -72,8 +72,8 @@ export class LiquidLanguageServer {
         `Hover request for: ${params.textDocument.uri}`,
       );
 
-      const hoverHandler = new HoverHandler(params, this.workspaceRoot);
-      const response = await hoverHandler.handleHoverRequest();
+      const hoverProvider = new HoverProvider(params, this.workspaceRoot);
+      const response = await hoverProvider.handleHoverRequest();
       if (response) {
         return {
           contents: response,
@@ -88,11 +88,11 @@ export class LiquidLanguageServer {
         `Definition request for: ${params.textDocument.uri}`,
       );
 
-      const definitionHandler = new DefinitionHandler(
+      const definitionProvider = new DefinitionProvider(
         params,
         this.workspaceRoot,
       );
-      const response = await definitionHandler.handleDefinitionRequest();
+      const response = await definitionProvider.handleDefinitionRequest();
       return response;
     });
 

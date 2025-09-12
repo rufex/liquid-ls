@@ -1,4 +1,4 @@
-import { HoverHandler } from "../src/hoverHandler";
+import { HoverProvider } from "../src/hoverProvider";
 import { HoverParams } from "vscode-languageserver/node";
 import * as fs from "fs";
 import { URI } from "vscode-uri";
@@ -49,7 +49,7 @@ jest.mock("../src/scopeAwareProvider", () => ({
     .mockImplementation(() => mockScopeAwareInstance),
 }));
 
-describe("HoverHandler", () => {
+describe("HoverProvider", () => {
   let mockParams: HoverParams;
   let mockFs: jest.Mocked<typeof fs>;
   let mockURI: jest.Mocked<typeof URI>;
@@ -80,9 +80,9 @@ describe("HoverHandler", () => {
 
   describe("initialization", () => {
     it("should create a hover handler instance", () => {
-      const handler = new HoverHandler(mockParams);
+      const handler = new HoverProvider(mockParams);
       expect(handler).toBeDefined();
-      expect(handler).toBeInstanceOf(HoverHandler);
+      expect(handler).toBeInstanceOf(HoverProvider);
     });
   });
 
@@ -90,7 +90,7 @@ describe("HoverHandler", () => {
     it("should return null when document is not found", async () => {
       mockFs.readFileSync = jest.fn().mockReturnValue("");
 
-      const handler = new HoverHandler(mockParams);
+      const handler = new HoverProvider(mockParams);
       const result = await handler.handleHoverRequest();
 
       expect(result).toBeNull();
@@ -100,7 +100,7 @@ describe("HoverHandler", () => {
       const content = "<h1>Hello World</h1>";
       mockFs.readFileSync = jest.fn().mockReturnValue(content);
 
-      const handler = new HoverHandler(mockParams);
+      const handler = new HoverProvider(mockParams);
       const result = await handler.handleHoverRequest();
 
       expect(result).toBeNull();
@@ -119,7 +119,7 @@ describe("HoverHandler", () => {
         character: 15, // Inside the translation call
       };
 
-      const handler = new HoverHandler(mockParams);
+      const handler = new HoverProvider(mockParams);
       const result = await handler.handleHoverRequest();
 
       // The result might be null due to TreeSitter parsing specifics in tests
@@ -139,7 +139,7 @@ describe("HoverHandler", () => {
         character: 15,
       };
 
-      const handler = new HoverHandler(mockParams);
+      const handler = new HoverProvider(mockParams);
       const result = await handler.handleHoverRequest();
 
       // The result might be null due to TreeSitter parsing specifics in tests
@@ -151,7 +151,7 @@ describe("HoverHandler", () => {
       const content = "invalid liquid syntax {%";
       mockFs.readFileSync = jest.fn().mockReturnValue(content);
 
-      const handler = new HoverHandler(mockParams);
+      const handler = new HoverProvider(mockParams);
       const result = await handler.handleHoverRequest();
 
       // Should either return a result or null, but not throw
@@ -163,7 +163,7 @@ describe("HoverHandler", () => {
         throw new Error("File not found");
       });
 
-      const handler = new HoverHandler(mockParams);
+      const handler = new HoverProvider(mockParams);
 
       // Should not throw, but handle the error gracefully
       await expect(handler.handleHoverRequest()).rejects.toThrow(
@@ -184,7 +184,7 @@ describe("HoverHandler", () => {
       `;
       mockFs.readFileSync = jest.fn().mockReturnValue(content);
 
-      const handler = new HoverHandler(mockParams);
+      const handler = new HoverProvider(mockParams);
       const result = await handler.handleHoverRequest();
 
       expect(typeof result === "string" || result === null).toBe(true);
@@ -200,7 +200,7 @@ describe("HoverHandler", () => {
       `;
       mockFs.readFileSync = jest.fn().mockReturnValue(content);
 
-      const handler = new HoverHandler(mockParams);
+      const handler = new HoverProvider(mockParams);
       const result = await handler.handleHoverRequest();
 
       expect(typeof result === "string" || result === null).toBe(true);
@@ -214,7 +214,7 @@ describe("HoverHandler", () => {
       `;
       mockFs.readFileSync = jest.fn().mockReturnValue(content);
 
-      const handler = new HoverHandler(mockParams);
+      const handler = new HoverProvider(mockParams);
       const result = await handler.handleHoverRequest();
 
       expect(typeof result === "string" || result === null).toBe(true);
@@ -237,7 +237,7 @@ describe("HoverHandler", () => {
         "unreconciled",
       );
 
-      const handler = new HoverHandler(mockParams);
+      const handler = new HoverProvider(mockParams);
       const result = await handler.handleHoverRequest();
 
       expect(result).not.toBeNull();
@@ -254,7 +254,7 @@ describe("HoverHandler", () => {
         "result",
       );
 
-      const handler = new HoverHandler(mockParams);
+      const handler = new HoverProvider(mockParams);
       const result = await handler.handleHoverRequest();
 
       expect(result).not.toBeNull();
@@ -269,7 +269,7 @@ describe("HoverHandler", () => {
         "unknown_tag",
       );
 
-      const handler = new HoverHandler(mockParams);
+      const handler = new HoverProvider(mockParams);
       const result = await handler.handleHoverRequest();
 
       expect(result).toBeNull();
@@ -289,7 +289,7 @@ describe("HoverHandler", () => {
         content: "default: 'Test translation'",
       });
 
-      const handler = new HoverHandler(mockParams);
+      const handler = new HoverProvider(mockParams);
       const result = await handler.handleHoverRequest();
 
       // Should return translation hover, not tag hover
@@ -310,7 +310,7 @@ describe("HoverHandler", () => {
         null,
       );
 
-      const handler = new HoverHandler(mockParams);
+      const handler = new HoverProvider(mockParams);
       const result = await handler.handleHoverRequest();
 
       // Should return translation "not found" message, not tag hover
@@ -323,7 +323,7 @@ describe("HoverHandler", () => {
       mockTreeSitterInstance.getTranslationKeyAtPosition.mockReturnValue(null);
       mockTreeSitterInstance.getTagIdentifierAtPosition.mockReturnValue(null);
 
-      const handler = new HoverHandler(mockParams);
+      const handler = new HoverProvider(mockParams);
       const result = await handler.handleHoverRequest();
 
       expect(result).toBeNull();
@@ -340,7 +340,7 @@ describe("HoverHandler", () => {
         "unreconciled",
       );
 
-      const handler = new HoverHandler(mockParams);
+      const handler = new HoverProvider(mockParams);
       const result = await handler.handleHoverRequest();
 
       expect(result).not.toBeNull();
@@ -361,7 +361,7 @@ describe("HoverHandler", () => {
         "result",
       );
 
-      const handler = new HoverHandler(mockParams);
+      const handler = new HoverProvider(mockParams);
       const result = await handler.handleHoverRequest();
 
       expect(result).not.toBeNull();
@@ -375,7 +375,7 @@ describe("HoverHandler", () => {
         "unreconciled",
       );
 
-      const handler = new HoverHandler(mockParams);
+      const handler = new HoverProvider(mockParams);
       await handler.handleHoverRequest();
 
       // Verify the methods were called

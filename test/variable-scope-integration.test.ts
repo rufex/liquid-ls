@@ -1,4 +1,4 @@
-import { DefinitionHandler } from "../src/definitionHandler";
+import { DefinitionProvider } from "../src/definitionProvider";
 import { DefinitionParams } from "vscode-languageserver/node";
 import * as path from "path";
 
@@ -19,7 +19,7 @@ describe("Variable Scope Integration Tests", () => {
         position: { line: 9, character: 5 }, // Position on part_var in {{ part_var }}
       };
 
-      const handler = new DefinitionHandler(params, fixtureBasePath);
+      const handler = new DefinitionProvider(params, fixtureBasePath);
       const result = await handler.handleDefinitionRequest();
 
       // Currently this will fail because variables don't use scope-aware lookup
@@ -46,7 +46,7 @@ describe("Variable Scope Integration Tests", () => {
         position: { line: 11, character: 32 }, // Position on main_var in derived_from_main assignment
       };
 
-      const handler = new DefinitionHandler(params, fixtureBasePath);
+      const handler = new DefinitionProvider(params, fixtureBasePath);
       const result = await handler.handleDefinitionRequest();
 
       // Currently this will fail because variables don't use scope-aware lookup
@@ -73,7 +73,7 @@ describe("Variable Scope Integration Tests", () => {
         position: { line: 12, character: 8 }, // Position on nested_var in {{ nested_var }}
       };
 
-      const handler = new DefinitionHandler(params, fixtureBasePath);
+      const handler = new DefinitionProvider(params, fixtureBasePath);
       const result = await handler.handleDefinitionRequest();
 
       // Currently this will fail because variables don't use scope-aware lookup
@@ -100,7 +100,7 @@ describe("Variable Scope Integration Tests", () => {
         position: { line: 24, character: 5 }, // Position on override_var at end of file (0-based)
       };
 
-      const handler = new DefinitionHandler(params, fixtureBasePath);
+      const handler = new DefinitionProvider(params, fixtureBasePath);
       const result = await handler.handleDefinitionRequest();
 
       // Should find the most recent definition (from shared_vars.liquid)
@@ -139,7 +139,7 @@ describe("Variable Scope Integration Tests", () => {
           position: testCase.position,
         };
 
-        const handler = new DefinitionHandler(params, fixtureBasePath);
+        const handler = new DefinitionProvider(params, fixtureBasePath);
         const result = await handler.handleDefinitionRequest();
 
         // These should now work with scope-aware lookup
@@ -183,7 +183,7 @@ describe("Variable Scope Integration Tests", () => {
           position: testCase.position,
         };
 
-        const handler = new DefinitionHandler(params, fixtureBasePath);
+        const handler = new DefinitionProvider(params, fixtureBasePath);
         const result = await handler.handleDefinitionRequest();
 
         expect(result).toBeDefined();

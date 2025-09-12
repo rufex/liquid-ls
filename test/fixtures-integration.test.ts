@@ -1,5 +1,5 @@
-import { HoverHandler } from "../src/hoverHandler";
-import { DefinitionHandler } from "../src/definitionHandler";
+import { HoverProvider } from "../src/hoverProvider";
+import { DefinitionProvider } from "../src/definitionProvider";
 import { HoverParams, DefinitionParams } from "vscode-languageserver/node";
 import * as path from "path";
 import * as fs from "fs";
@@ -22,7 +22,7 @@ describe("Fixtures Integration Tests", () => {
           },
         };
 
-        const handler = new HoverHandler(params, fixturesPath);
+        const handler = new HoverProvider(params, fixturesPath);
         const result = await handler.handleHoverRequest();
 
         expect(result).toBeDefined();
@@ -42,7 +42,7 @@ describe("Fixtures Integration Tests", () => {
           },
         };
 
-        const handler = new HoverHandler(params, fixturesPath);
+        const handler = new HoverProvider(params, fixturesPath);
         const result = await handler.handleHoverRequest();
 
         expect(result).toBeDefined();
@@ -63,7 +63,7 @@ describe("Fixtures Integration Tests", () => {
           },
         };
 
-        const handler = new HoverHandler(params, fixturesPath);
+        const handler = new HoverProvider(params, fixturesPath);
         const result = await handler.handleHoverRequest();
 
         expect(result).toBeDefined();
@@ -83,7 +83,7 @@ describe("Fixtures Integration Tests", () => {
           },
         };
 
-        const handler = new DefinitionHandler(params, fixturesPath);
+        const handler = new DefinitionProvider(params, fixturesPath);
         const result = await handler.handleDefinitionRequest();
 
         expect(result).toBeDefined();
@@ -105,7 +105,7 @@ describe("Fixtures Integration Tests", () => {
           },
         };
 
-        const handler = new DefinitionHandler(params, fixturesPath);
+        const handler = new DefinitionProvider(params, fixturesPath);
         const result = await handler.handleDefinitionRequest();
 
         expect(result).toBeDefined();
@@ -137,7 +137,7 @@ describe("Fixtures Integration Tests", () => {
           },
         };
 
-        const handler = new HoverHandler(params, fixturesPath);
+        const handler = new HoverProvider(params, fixturesPath);
         const result = await handler.handleHoverRequest();
 
         expect(result).toBeDefined();
@@ -157,7 +157,7 @@ describe("Fixtures Integration Tests", () => {
           },
         };
 
-        const handler = new HoverHandler(params, fixturesPath);
+        const handler = new HoverProvider(params, fixturesPath);
         const result = await handler.handleHoverRequest();
 
         expect(result).toBeDefined();
@@ -179,7 +179,7 @@ describe("Fixtures Integration Tests", () => {
           },
         };
 
-        const handler = new DefinitionHandler(params, fixturesPath);
+        const handler = new DefinitionProvider(params, fixturesPath);
         const result = await handler.handleDefinitionRequest();
 
         expect(result).toBeDefined();
@@ -201,7 +201,7 @@ describe("Fixtures Integration Tests", () => {
           },
         };
 
-        const handler = new DefinitionHandler(params, fixturesPath);
+        const handler = new DefinitionProvider(params, fixturesPath);
         const result = await handler.handleDefinitionRequest();
 
         expect(result).toBeDefined();
@@ -227,7 +227,7 @@ describe("Fixtures Integration Tests", () => {
           },
         };
 
-        const handler = new HoverHandler(params, fixturesPath);
+        const handler = new HoverProvider(params, fixturesPath);
         const result = await handler.handleHoverRequest();
 
         expect(result).toBeDefined();
@@ -251,7 +251,7 @@ describe("Fixtures Integration Tests", () => {
           },
         };
 
-        const handler = new HoverHandler(params, fixturesPath);
+        const handler = new HoverProvider(params, fixturesPath);
         const result = await handler.handleHoverRequest();
 
         expect(result).toBeDefined();
@@ -271,7 +271,7 @@ describe("Fixtures Integration Tests", () => {
           },
         };
 
-        const handler = new HoverHandler(params, fixturesPath);
+        const handler = new HoverProvider(params, fixturesPath);
         const result = await handler.handleHoverRequest();
 
         // Note: EF part_2.liquid is empty, so this should not find a definition
@@ -295,7 +295,7 @@ describe("Fixtures Integration Tests", () => {
           },
         };
 
-        const handler = new DefinitionHandler(params, fixturesPath);
+        const handler = new DefinitionProvider(params, fixturesPath);
         const result = await handler.handleDefinitionRequest();
 
         expect(result).toBeDefined();
@@ -317,7 +317,7 @@ describe("Fixtures Integration Tests", () => {
           },
         };
 
-        const handler = new DefinitionHandler(params, fixturesPath);
+        const handler = new DefinitionProvider(params, fixturesPath);
         const result = await handler.handleDefinitionRequest();
 
         expect(result).toBeNull();
@@ -338,7 +338,7 @@ describe("Fixtures Integration Tests", () => {
           },
         };
 
-        const handler = new HoverHandler(params, fixturesPath);
+        const handler = new HoverProvider(params, fixturesPath);
         const result = await handler.handleHoverRequest();
 
         expect(result).toBeDefined();
@@ -380,7 +380,7 @@ describe("Fixtures Integration Tests", () => {
           },
         };
 
-        const handler = new HoverHandler(params, fixturesPath);
+        const handler = new HoverProvider(params, fixturesPath);
         const result = await handler.handleHoverRequest();
 
         expect(result).toBeDefined();
@@ -421,7 +421,7 @@ describe("Fixtures Integration Tests", () => {
           },
         };
 
-        const handler = new DefinitionHandler(params, fixturesPath);
+        const handler = new DefinitionProvider(params, fixturesPath);
         const result = await handler.handleDefinitionRequest();
 
         expect(result).toBeDefined();
@@ -452,7 +452,7 @@ describe("Fixtures Integration Tests", () => {
           },
         };
 
-        const handler = new HoverHandler(params, fixturesPath);
+        const handler = new HoverProvider(params, fixturesPath);
         const result = await handler.handleHoverRequest();
 
         expect(result).toBeDefined();
@@ -477,7 +477,7 @@ describe("Fixtures Integration Tests", () => {
           },
         };
 
-        const handler = new DefinitionHandler(params, fixturesPath);
+        const handler = new DefinitionProvider(params, fixturesPath);
         const result = await handler.handleDefinitionRequest();
 
         expect(result).toBeNull();
@@ -502,7 +502,7 @@ describe("Fixtures Integration Tests", () => {
           },
         };
 
-        const handler = new HoverHandler(params, fixturesPath);
+        const handler = new HoverProvider(params, fixturesPath);
         const result = await handler.handleHoverRequest();
 
         expect(result).toBeDefined();
@@ -527,7 +527,7 @@ describe("Fixtures Integration Tests", () => {
           },
         };
 
-        const handler = new DefinitionHandler(params, fixturesPath);
+        const handler = new DefinitionProvider(params, fixturesPath);
         const result = await handler.handleDefinitionRequest();
 
         expect(result).toBeNull();
@@ -552,7 +552,7 @@ describe("Fixtures Integration Tests", () => {
           },
         };
 
-        const handler = new HoverHandler(params, fixturesPath);
+        const handler = new HoverProvider(params, fixturesPath);
         const result = await handler.handleHoverRequest();
 
         expect(result).toBeDefined();
@@ -580,7 +580,7 @@ describe("Fixtures Integration Tests", () => {
           },
         };
 
-        const handlerBefore = new HoverHandler(paramsBeforeInclude);
+        const handlerBefore = new HoverProvider(paramsBeforeInclude);
         const resultBefore = await handlerBefore.handleHoverRequest();
 
         expect(resultBefore).toContain("Definition not found");
@@ -609,7 +609,7 @@ describe("Fixtures Integration Tests", () => {
         },
       };
 
-      const handler = new HoverHandler(params);
+      const handler = new HoverProvider(params);
       const result = await handler.handleHoverRequest();
 
       expect(result).toBeDefined();
@@ -635,7 +635,7 @@ describe("Fixtures Integration Tests", () => {
         },
       };
 
-      const handler = new DefinitionHandler(params);
+      const handler = new DefinitionProvider(params);
       const result = await handler.handleDefinitionRequest();
 
       expect(result).toBeDefined();
@@ -663,7 +663,7 @@ describe("Fixtures Integration Tests", () => {
         },
       };
 
-      const handler = new DefinitionHandler(params);
+      const handler = new DefinitionProvider(params);
       const result = await handler.handleDefinitionRequest();
 
       expect(result).toBeDefined();
@@ -691,7 +691,7 @@ describe("Fixtures Integration Tests", () => {
         },
       };
 
-      const handler = new DefinitionHandler(params);
+      const handler = new DefinitionProvider(params);
       const result = await handler.handleDefinitionRequest();
 
       expect(result).toBeDefined();
@@ -719,7 +719,7 @@ describe("Fixtures Integration Tests", () => {
         },
       };
 
-      const handler = new DefinitionHandler(params);
+      const handler = new DefinitionProvider(params);
       const result = await handler.handleDefinitionRequest();
 
       expect(result).toBeDefined();
@@ -747,7 +747,7 @@ describe("Fixtures Integration Tests", () => {
         },
       };
 
-      const handler = new DefinitionHandler(params);
+      const handler = new DefinitionProvider(params);
       const result = await handler.handleDefinitionRequest();
 
       expect(result).toBeDefined();
@@ -781,7 +781,7 @@ describe("Fixtures Integration Tests", () => {
           },
         };
 
-        const handler = new DefinitionHandler(params, fixturesPath);
+        const handler = new DefinitionProvider(params, fixturesPath);
         const result = await handler.handleDefinitionRequest();
 
         expect(result).toBeNull();
@@ -806,7 +806,7 @@ describe("Fixtures Integration Tests", () => {
         },
       };
 
-      const handler = new HoverHandler(params);
+      const handler = new HoverProvider(params);
       const result = await handler.handleHoverRequest();
 
       // Should not throw, but may return null or basic info
@@ -825,7 +825,7 @@ describe("Fixtures Integration Tests", () => {
         },
       };
 
-      const handler = new HoverHandler(params);
+      const handler = new HoverProvider(params);
 
       // Should handle file not found gracefully
       await expect(handler.handleHoverRequest()).rejects.toThrow();
@@ -844,7 +844,7 @@ describe("Fixtures Integration Tests", () => {
         },
       };
 
-      const handler = new HoverHandler(params);
+      const handler = new HoverProvider(params);
       const result = await handler.handleHoverRequest();
 
       expect(typeof result === "string" || result === null).toBe(true);
@@ -870,7 +870,7 @@ describe("Fixtures Integration Tests", () => {
           },
         };
 
-        const handler = new DefinitionHandler(params, fixturesPath);
+        const handler = new DefinitionProvider(params, fixturesPath);
         const result = await handler.handleDefinitionRequest();
 
         expect(result).toBeDefined();
@@ -907,7 +907,7 @@ describe("Fixtures Integration Tests", () => {
             },
           };
 
-          const handler = new DefinitionHandler(params, fixturesPath);
+          const handler = new DefinitionProvider(params, fixturesPath);
           const result = await handler.handleDefinitionRequest();
 
           // Should return null because account_1 is not in shared_part_1's used_in
@@ -937,7 +937,7 @@ describe("Fixtures Integration Tests", () => {
             },
           };
 
-          const handler = new DefinitionHandler(params, fixturesPath);
+          const handler = new DefinitionProvider(params, fixturesPath);
           const result = await handler.handleDefinitionRequest();
 
           expect(result).toBeNull();
@@ -962,7 +962,7 @@ describe("Fixtures Integration Tests", () => {
         };
 
         // Test the existing translation call in main.liquid
-        const handler = new HoverHandler(params, fixturesPath);
+        const handler = new HoverProvider(params, fixturesPath);
         const result = await handler.handleHoverRequest();
 
         expect(result).toBeDefined();
@@ -996,7 +996,7 @@ describe("Fixtures Integration Tests", () => {
             },
           };
 
-          const handler = new HoverHandler(params, fixturesPath);
+          const handler = new HoverProvider(params, fixturesPath);
           const result = await handler.handleHoverRequest();
 
           expect(result).toBeDefined();
@@ -1023,7 +1023,7 @@ describe("Fixtures Integration Tests", () => {
           },
         };
 
-        const handler1 = new DefinitionHandler(params1, fixturesPath);
+        const handler1 = new DefinitionProvider(params1, fixturesPath);
         const result1 = await handler1.handleDefinitionRequest();
         expect(result1).toBeDefined();
 
@@ -1043,7 +1043,7 @@ describe("Fixtures Integration Tests", () => {
           },
         };
 
-        const handler2 = new DefinitionHandler(params2, fixturesPath);
+        const handler2 = new DefinitionProvider(params2, fixturesPath);
         const result2 = await handler2.handleDefinitionRequest();
         expect(result2).toBeDefined();
       });
@@ -1067,7 +1067,7 @@ describe("Fixtures Integration Tests", () => {
             },
           };
 
-          const handler = new DefinitionHandler(params, fixturesPath);
+          const handler = new DefinitionProvider(params, fixturesPath);
           const result = await handler.handleDefinitionRequest();
 
           // Should return null because reconciliation_text_1 is not in shared_part_3's used_in

@@ -1,4 +1,4 @@
-import { DefinitionHandler } from "../src/definitionHandler";
+import { DefinitionProvider } from "../src/definitionProvider";
 import { DefinitionParams } from "vscode-languageserver/node";
 import * as fs from "fs";
 import { URI } from "vscode-uri";
@@ -40,7 +40,7 @@ jest.mock("../src/scopeAwareProvider", () => ({
   })),
 }));
 
-describe("DefinitionHandler", () => {
+describe("DefinitionProvider", () => {
   let mockParams: DefinitionParams;
   let mockFs: jest.Mocked<typeof fs>;
   let mockURI: jest.Mocked<typeof URI>;
@@ -88,9 +88,9 @@ describe("DefinitionHandler", () => {
 
   describe("initialization", () => {
     it("should create a definition handler instance", () => {
-      const handler = new DefinitionHandler(mockParams);
+      const handler = new DefinitionProvider(mockParams);
       expect(handler).toBeDefined();
-      expect(handler).toBeInstanceOf(DefinitionHandler);
+      expect(handler).toBeInstanceOf(DefinitionProvider);
     });
   });
 
@@ -98,7 +98,7 @@ describe("DefinitionHandler", () => {
     it("should return null when document is not found", async () => {
       mockFs.readFileSync = jest.fn().mockReturnValue("");
 
-      const handler = new DefinitionHandler(mockParams);
+      const handler = new DefinitionProvider(mockParams);
       const result = await handler.handleDefinitionRequest();
 
       expect(result).toBeNull();
@@ -109,7 +109,7 @@ describe("DefinitionHandler", () => {
       mockFs.readFileSync = jest.fn().mockReturnValue(content);
       mockParseText.mockReturnValue(null);
 
-      const handler = new DefinitionHandler(mockParams);
+      const handler = new DefinitionProvider(mockParams);
       const result = await handler.handleDefinitionRequest();
 
       expect(result).toBeNull();
@@ -121,7 +121,7 @@ describe("DefinitionHandler", () => {
       mockParseText.mockReturnValue({ rootNode: {} });
       mockGetTranslationKeyAtPosition.mockReturnValue(null);
 
-      const handler = new DefinitionHandler(mockParams);
+      const handler = new DefinitionProvider(mockParams);
       const result = await handler.handleDefinitionRequest();
 
       expect(result).toBeNull();
@@ -134,7 +134,7 @@ describe("DefinitionHandler", () => {
       mockGetTranslationKeyAtPosition.mockReturnValue("missing_key");
       mockFindScopedTranslationDefinition.mockReturnValue(null);
 
-      const handler = new DefinitionHandler(mockParams);
+      const handler = new DefinitionProvider(mockParams);
       const result = await handler.handleDefinitionRequest();
 
       expect(result).toBeNull();
@@ -158,7 +158,7 @@ describe("DefinitionHandler", () => {
         endPosition: { row: 1, column: 14 },
       });
 
-      const handler = new DefinitionHandler(mockParams);
+      const handler = new DefinitionProvider(mockParams);
       const result = await handler.handleDefinitionRequest();
 
       expect(Array.isArray(result)).toBe(true);
@@ -184,7 +184,7 @@ describe("DefinitionHandler", () => {
       });
       mockGetTranslationKeyLocation.mockReturnValue(null);
 
-      const handler = new DefinitionHandler(mockParams);
+      const handler = new DefinitionProvider(mockParams);
       const result = await handler.handleDefinitionRequest();
 
       expect(Array.isArray(result)).toBe(true);
@@ -198,7 +198,7 @@ describe("DefinitionHandler", () => {
         throw new Error("File not found");
       });
 
-      const handler = new DefinitionHandler(mockParams);
+      const handler = new DefinitionProvider(mockParams);
 
       await expect(handler.handleDefinitionRequest()).rejects.toThrow(
         "File not found",
@@ -240,7 +240,7 @@ describe("DefinitionHandler", () => {
         endPosition: { row: 0, column: 13 },
       });
 
-      const handler = new DefinitionHandler(mockParams);
+      const handler = new DefinitionProvider(mockParams);
       const result = await handler.handleDefinitionRequest();
 
       expect(Array.isArray(result)).toBe(true);
@@ -276,7 +276,7 @@ describe("DefinitionHandler", () => {
         endPosition: { row: 0, column: 14 },
       });
 
-      const handler = new DefinitionHandler(mockParams);
+      const handler = new DefinitionProvider(mockParams);
       const result = await handler.handleDefinitionRequest();
 
       expect(Array.isArray(result)).toBe(true);
@@ -310,7 +310,7 @@ describe("DefinitionHandler", () => {
         endPosition: { row: 0, column: 8 },
       });
 
-      const handler = new DefinitionHandler(mockParams);
+      const handler = new DefinitionProvider(mockParams);
       const result = await handler.handleDefinitionRequest();
 
       expect(Array.isArray(result)).toBe(true);
@@ -326,7 +326,7 @@ describe("DefinitionHandler", () => {
       mockGetVariableAtPosition.mockReturnValue("nonexistent");
       mockFindScopedVariableDefinition.mockReturnValue(null);
 
-      const handler = new DefinitionHandler(mockParams);
+      const handler = new DefinitionProvider(mockParams);
       const result = await handler.handleDefinitionRequest();
 
       expect(result).toBeNull();
@@ -354,7 +354,7 @@ describe("DefinitionHandler", () => {
 
       mockGetVariableNameLocation.mockReturnValue(null);
 
-      const handler = new DefinitionHandler(mockParams);
+      const handler = new DefinitionProvider(mockParams);
       const result = await handler.handleDefinitionRequest();
 
       expect(Array.isArray(result)).toBe(true);
@@ -369,7 +369,7 @@ describe("DefinitionHandler", () => {
       mockParseText.mockReturnValue({ rootNode: {} });
       mockGetVariableAtPosition.mockReturnValue(null);
 
-      const handler = new DefinitionHandler(mockParams);
+      const handler = new DefinitionProvider(mockParams);
       const result = await handler.handleDefinitionRequest();
 
       expect(result).toBeNull();
@@ -401,7 +401,7 @@ describe("DefinitionHandler", () => {
         endPosition: { row: 0, column: 15 },
       });
 
-      const handler = new DefinitionHandler(mockParams);
+      const handler = new DefinitionProvider(mockParams);
       const result = await handler.handleDefinitionRequest();
 
       expect(Array.isArray(result)).toBe(true);
@@ -436,7 +436,7 @@ describe("DefinitionHandler", () => {
         endPosition: { row: 0, column: 18 },
       });
 
-      const handler = new DefinitionHandler(mockParams);
+      const handler = new DefinitionProvider(mockParams);
       const result = await handler.handleDefinitionRequest();
 
       expect(Array.isArray(result)).toBe(true);

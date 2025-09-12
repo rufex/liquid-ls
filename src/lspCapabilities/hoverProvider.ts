@@ -6,7 +6,7 @@ import { HoverParams } from "vscode-languageserver/node";
 import { URI } from "vscode-uri";
 import * as fs from "fs";
 
-export class HoverHandler {
+export class HoverProvider {
   private textDocumentUri: HoverParams["textDocument"]["uri"];
   private position: HoverParams["position"];
   private logger: Logger;
@@ -17,14 +17,14 @@ export class HoverHandler {
   constructor(params: HoverParams, workspaceRoot?: string | null) {
     this.textDocumentUri = params.textDocument.uri;
     this.position = params.position;
-    this.logger = new Logger("HoverHandler");
+    this.logger = new Logger("HoverProvider");
     this.parser = new TreeSitterLiquidProvider();
     this.scopeAwareProvider = new ScopeAwareProvider(
       workspaceRoot || undefined,
     );
     this.documentationProvider = new DocumentationProvider();
 
-    this.logger.logRequest("HoverHandler initialized", {
+    this.logger.logRequest("HoverProvider initialized", {
       uri: this.textDocumentUri,
       position: this.position,
     });

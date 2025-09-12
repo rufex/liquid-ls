@@ -1,4 +1,4 @@
-import { DefinitionHandler } from "../src/definitionHandler";
+import { DefinitionProvider } from "../src/definitionProvider";
 import { DefinitionParams } from "vscode-languageserver/node";
 import * as path from "path";
 
@@ -19,7 +19,7 @@ describe("Variable Assignment Integration Tests", () => {
         position: { line: 15, character: 6 }, // Position on simple_var in {{ simple_var | upcase }}
       };
 
-      const handler = new DefinitionHandler(params, fixtureBasePath);
+      const handler = new DefinitionProvider(params, fixtureBasePath);
       const result = await handler.handleDefinitionRequest();
 
       expect(result).toBeDefined();
@@ -39,7 +39,7 @@ describe("Variable Assignment Integration Tests", () => {
         position: { line: 15, character: 6 }, // Position on simple_var in filter
       };
 
-      const handler = new DefinitionHandler(params, fixtureBasePath);
+      const handler = new DefinitionProvider(params, fixtureBasePath);
       const result = await handler.handleDefinitionRequest();
 
       expect(result).toBeDefined();
@@ -59,7 +59,7 @@ describe("Variable Assignment Integration Tests", () => {
         position: { line: 18, character: 28 }, // Position on complex_var in assignment value
       };
 
-      const handler = new DefinitionHandler(params, fixtureBasePath);
+      const handler = new DefinitionProvider(params, fixtureBasePath);
       const result = await handler.handleDefinitionRequest();
 
       expect(result).toBeDefined();
@@ -81,7 +81,7 @@ describe("Variable Assignment Integration Tests", () => {
         position: { line: 25, character: 12 }, // Position on complex_var in [complex_var]
       };
 
-      const handler = new DefinitionHandler(params, fixtureBasePath);
+      const handler = new DefinitionProvider(params, fixtureBasePath);
       const result = await handler.handleDefinitionRequest();
 
       expect(result).toBeDefined();
@@ -103,7 +103,7 @@ describe("Variable Assignment Integration Tests", () => {
         position: { line: 12, character: 6 }, // Position on loop_item in {{ loop_item }}
       };
 
-      const handler = new DefinitionHandler(params, fixtureBasePath);
+      const handler = new DefinitionProvider(params, fixtureBasePath);
       const result = await handler.handleDefinitionRequest();
 
       expect(result).toBeDefined();
@@ -123,7 +123,7 @@ describe("Variable Assignment Integration Tests", () => {
         position: { line: 10, character: 20 }, // Position on items in for loop
       };
 
-      const handler = new DefinitionHandler(params, fixtureBasePath);
+      const handler = new DefinitionProvider(params, fixtureBasePath);
       const result = await handler.handleDefinitionRequest();
 
       expect(result).toBeDefined();
@@ -174,7 +174,7 @@ describe("Variable Assignment Integration Tests", () => {
           position: testCase.position,
         };
 
-        const handler = new DefinitionHandler(params, fixtureBasePath);
+        const handler = new DefinitionProvider(params, fixtureBasePath);
         const result = await handler.handleDefinitionRequest();
 
         expect(result).toBeDefined();
@@ -197,7 +197,7 @@ describe("Variable Assignment Integration Tests", () => {
         position: { line: 0, character: 5 }, // Position on comment
       };
 
-      const handler = new DefinitionHandler(params, fixtureBasePath);
+      const handler = new DefinitionProvider(params, fixtureBasePath);
       const result = await handler.handleDefinitionRequest();
 
       expect(result).toBeNull();
@@ -212,7 +212,7 @@ describe("Variable Assignment Integration Tests", () => {
         position: { line: 1, character: 1 }, // Position in empty line
       };
 
-      const handler = new DefinitionHandler(params, fixtureBasePath);
+      const handler = new DefinitionProvider(params, fixtureBasePath);
       const result = await handler.handleDefinitionRequest();
 
       expect(result).toBeNull();

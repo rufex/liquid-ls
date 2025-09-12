@@ -8,7 +8,7 @@ import * as fs from "fs";
 import * as path from "path";
 import * as Parser from "tree-sitter";
 
-export class DefinitionHandler {
+export class DefinitionProvider {
   private textDocumentUri: DefinitionParams["textDocument"]["uri"];
   private position: DefinitionParams["position"];
   private logger: Logger;
@@ -19,14 +19,14 @@ export class DefinitionHandler {
   constructor(params: DefinitionParams, workspaceRoot?: string | null) {
     this.textDocumentUri = params.textDocument.uri;
     this.position = params.position;
-    this.logger = new Logger("DefinitionHandler");
+    this.logger = new Logger("DefinitionProvider");
     this.provider = new TreeSitterLiquidProvider();
     this.scopeAwareProvider = new ScopeAwareProvider(
       workspaceRoot || undefined,
     );
     this.relatedFilesProvider = new RelatedFilesProvider();
 
-    this.logger.logRequest("DefinitionHandler initialized", {
+    this.logger.logRequest("DefinitionProvider initialized", {
       uri: this.textDocumentUri,
       position: this.position,
     });
