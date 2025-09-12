@@ -1,6 +1,6 @@
 {
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && cp -r docs out/",
     "start": "node ./out/index.js --stdio",
     "debug:mapper": "tsc && node out/debugScripts/templateMapperDebug.js",
     "debug:collection": "tsc && node out/debugScripts/templatePartsCollectionManagerDebug.js",

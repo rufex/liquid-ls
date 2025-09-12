@@ -37,3 +37,11 @@ export enum TemplateDirectories {
   exportFile = "export_files",
   accountTemplate = "account_templates",
 }
+
+export interface TemplateUriInfo {
+  templateType: TemplateTypes;
+  templateName: string;
+  partType: TemplatePartType;
+  partName: string;
+  fullPath: string;
+}
