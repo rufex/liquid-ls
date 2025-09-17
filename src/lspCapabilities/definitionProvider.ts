@@ -1,6 +1,7 @@
 import { Logger } from "../logger";
 import { DefinitionParams, Location } from "vscode-languageserver/node";
 import { LiquidTagIdentifier } from "../liquid/liquidTagIdentifier";
+import { LiquidTagFinder } from "../liquid/liquidTagFinder";
 import { URI } from "vscode-uri";
 import * as fs from "fs";
 import { IncludeParser } from "../liquid/includeParser";
@@ -51,6 +52,11 @@ export class DefinitionProvider {
       return this.handleIncludeTag(liquidNode);
     }
 
+    // TRANSLATION TAG
+    if (liquidNode.type === "translation_expression") {
+      return this.handleTranslationTag(liquidNode);
+    }
+
     this.logger.debug(
       `No definition handler for node type: ${liquidNode.type}`,
     );
@@ -90,7 +96,53 @@ export class DefinitionProvider {
       this.logger.debug(`File not found for include tag: ${partPath}`);
     }
 
-    this.logger.debug("No definition found for include tag");
+    this.logger.warn("No definition found for include tag");
+    return null;
+  }
+
+  private async handleTranslationTag(
+    liquidNode: Parser.SyntaxNode,
+  ): Promise<Location[] | null> {
+    const searchFor = "translation_statement";
+    const identifier = new LiquidTagIdentifier();
+    const nodeKey = identifier.identifyNodeKey(liquidNode);
+    if (nodeKey && this.workspaceRoot) {
+      const finder = new LiquidTagFinder();
+      const nodes = await finder.findAllNodesBeforePosition(
+        this.textDocumentUri,
+        this.position.line,
+        nodeKey,
+        searchFor,
+        this.workspaceRoot,
+      );
+      if (!nodes) {
+        this.logger.debug(`No translation nodes found for key: ${nodeKey}`);
+        return null;
+      }
+
+      // return all nodes
+      const locations: Location[] = nodes.map((node) => {
+        return {
+          uri: URI.file(node.templatePart.fileFullPath).toString(),
+          range: {
+            start: {
+              line: node.node.startPosition.row,
+              character: node.node.startPosition.column,
+            },
+            end: {
+              line: node.node.endPosition.row,
+              character: node.node.endPosition.column,
+            },
+          },
+        };
+      });
+      this.logger.debug(
+        `Found ${locations.length} definitions for translation tag`,
+      );
+      return locations;
+    }
+
+    this.logger.warn("No definition found for translation tag");
     return null;
   }
 }

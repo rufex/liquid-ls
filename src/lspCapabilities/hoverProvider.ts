@@ -75,7 +75,7 @@ export class HoverProvider {
 
         if (lastNode) {
           const translationProvider = new TranslationProvider();
-          return translationProvider.extractInfo(lastNode);
+          return translationProvider.extractInfo(lastNode.node);
         }
       }
     }

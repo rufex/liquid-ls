@@ -4,6 +4,11 @@ import { TreeSitterLiquidProvider } from "./treeSitterLiquidProvider";
 import * as fs from "fs";
 import { TemplatePartsCollectionManager } from "../templates/templatePartsCollectionManager";
 
+interface NodeInTemplate {
+  node: Parser.SyntaxNode;
+  templatePart: { fileFullPath: string };
+}
+
 export class LiquidTagFinder {
   private logger = new Logger("LiquidTagFinder");
   private parser = new TreeSitterLiquidProvider();
@@ -16,7 +21,7 @@ export class LiquidTagFinder {
     liquidKey: string,
     liquidType: string,
     workspaceRoot: string,
-  ): Promise<Parser.SyntaxNode[] | null> {
+  ): Promise<NodeInTemplate[] | null> {
     const templateManager =
       TemplatePartsCollectionManager.getInstance(workspaceRoot);
     const templateDetails = await templateManager.getMapAndIndexFromUri(
@@ -35,7 +40,7 @@ export class LiquidTagFinder {
       return null;
     }
 
-    const matchingNodes: Parser.SyntaxNode[] = [];
+    const matchingNodes: NodeInTemplate[] = [];
 
     for (let i = 0; i <= currentFileIndex; i++) {
       const part = templateParts[i];
@@ -47,11 +52,13 @@ export class LiquidTagFinder {
         if (i === currentFileIndex) {
           for (const node of nodes) {
             if (node.startPosition.row < currentRow) {
-              matchingNodes.push(node);
+              matchingNodes.push({ node, templatePart: part });
             }
           }
         } else {
-          matchingNodes.push(...nodes);
+          nodes.forEach((node) =>
+            matchingNodes.push({ node, templatePart: part }),
+          );
         }
       } catch (error) {
         this.logger.warn(`Could not read file: ${part.fileFullPath}, ${error}`);
