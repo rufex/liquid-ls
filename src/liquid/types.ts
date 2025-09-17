@@ -8,6 +8,7 @@ export const LiquidNodeTypes = {
   CaptureStatement: "capture_statement",
   LiquidTag: "liquid_tag",
   CustomUnpairedStatement: "custom_unpaired_statement",
+  IncludeStatement: "include_statement",
 } as const;
 
 export type LiquidNodeType =
