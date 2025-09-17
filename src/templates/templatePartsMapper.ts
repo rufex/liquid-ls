@@ -65,7 +65,7 @@ export class TemplatePartsMapper {
     }
 
     const mainLiquid = fs.readFileSync(mainTemplatePath, "utf-8");
-    const mainTree = this.parser.parseText(mainLiquid);
+    const mainTree = this.parser.parseTree(mainLiquid);
 
     if (!mainTree) {
       this.logger.error(`Failed to parse main template: ${mainTemplatePath}`);

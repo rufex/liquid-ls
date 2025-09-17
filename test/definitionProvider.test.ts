@@ -13,19 +13,16 @@ const mockFindTranslationDefinitionByKey = jest.fn();
 const mockGetTranslationKeyLocation = jest.fn();
 const mockGetIncludePathAtPosition = jest.fn();
 const mockGetVariableAtPosition = jest.fn();
-const mockFindVariableDefinitionByName = jest.fn();
 const mockGetVariableNameLocation = jest.fn();
 
 jest.mock("../src/treeSitterLiquidProvider", () => ({
   TreeSitterLiquidProvider: jest.fn().mockImplementation(() => ({
-    parseText: mockParseText,
+    parseTree: mockParseText,
     getTranslationKeyAtPosition: mockGetTranslationKeyAtPosition,
     findTranslationDefinitionByKey: mockFindTranslationDefinitionByKey,
     getTranslationKeyLocation: mockGetTranslationKeyLocation,
     getIncludePathAtPosition: mockGetIncludePathAtPosition,
     getVariableAtPosition: mockGetVariableAtPosition,
-    findVariableDefinitionByName: mockFindVariableDefinitionByName,
-    getVariableNameLocation: mockGetVariableNameLocation,
   })),
 }));
 

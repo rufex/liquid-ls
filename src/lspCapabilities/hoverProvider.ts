@@ -1,4 +1,3 @@
-import { TreeSitterLiquidProvider } from "../liquid/treeSitterLiquidProvider";
 import { DocumentationProvider } from "./documentationProvider";
 import { Logger } from "../logger";
 import { HoverParams } from "vscode-languageserver/node";
@@ -8,12 +7,12 @@ import { TranslationParser } from "../liquid/translationParser";
 import { TemplatePartsCollectionManager } from "../templates/templatePartsCollectionManager";
 import { parseTemplateUri } from "../utils/templateUriParser";
 import { TemplateParts, TemplateUriInfo } from "../types";
+import { LiquidTagIdentifier } from "../liquid/liquidTagIdentifier";
 
 export class HoverProvider {
   private textDocumentUri: HoverParams["textDocument"]["uri"];
   private position: HoverParams["position"];
   private logger: Logger;
-  private parser: TreeSitterLiquidProvider;
   private documentationProvider: DocumentationProvider;
   private workspaceRoot: string | null;
 
@@ -22,7 +21,6 @@ export class HoverProvider {
     this.textDocumentUri = params.textDocument.uri;
     this.position = params.position;
     this.logger = new Logger("HoverProvider");
-    this.parser = new TreeSitterLiquidProvider();
     this.documentationProvider = new DocumentationProvider();
 
     this.logger.logRequest("HoverProvider initialized", {
@@ -41,24 +39,26 @@ export class HoverProvider {
       return null;
     }
 
-    // TRANSLATIONS
+    // IDENTIFY NODE
 
-    const translationParser = new TranslationParser();
-    const translationExpressionNode = translationParser.isTranslationExpression(
+    const identifier = new LiquidTagIdentifier();
+    const liquidNode = identifier.identifyNode(
       document,
       this.position.line,
       this.position.character,
     );
+    if (!liquidNode) {
+      this.logger.debug("No Liquid node identified at cursor position");
+      return null;
+    }
 
-    this.logger.debug(
-      `Is translation expression: ${translationExpressionNode !== null}`,
-    );
+    // TRANSLATIONS
 
-    if (translationExpressionNode) {
-      this.logger.debug(`Found translation: ${translationExpressionNode}`);
+    if (liquidNode.type === "translation_expression") {
+      this.logger.debug(`Found translation expression: ${liquidNode}`);
 
       const translationHover = await this.findLastTranslationStatement(
-        translationExpressionNode,
+        liquidNode,
         filePath,
       );
       if (translationHover) {
@@ -68,40 +68,18 @@ export class HoverProvider {
 
     // DOCUMENTATION
 
-    const parsedTree = this.parser.parseText(document);
-
-    if (!parsedTree) {
-      this.logger.error("Failed to parse document with Tree-sitter");
-      return null;
-    }
-
-    this.logger.debug(
-      `Checking for tag documentation at position ${this.position.line}:${this.position.character}`,
-    );
-    const tagIdentifier = this.parser.getTagIdentifierAtPosition(
-      parsedTree,
-      this.position.line,
-      this.position.character,
-    );
-
-    this.logger.debug(
-      `Tag identifier result: ${tagIdentifier ? `"${tagIdentifier}"` : "null"}`,
-    );
+    const tagIdentifier = identifier.identifyTagName(liquidNode);
 
     if (tagIdentifier) {
-      this.logger.debug(`Found tag identifier: ${tagIdentifier}`);
-
       const tagHoverContent =
         this.documentationProvider.getTagHoverContent(tagIdentifier);
       if (tagHoverContent) {
-        this.logger.debug(`Found tag documentation for: ${tagIdentifier}`);
         return tagHoverContent;
-      } else {
-        this.logger.debug(`No documentation found for tag: ${tagIdentifier}`);
       }
     }
 
     // No hover information available
+    this.logger.debug("No hover information available");
     return null;
   }
 

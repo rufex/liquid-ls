@@ -8,7 +8,7 @@ jest.mock("vscode-uri");
 
 // Mock the TreeSitterLiquidProvider with shared instance
 const mockTreeSitterInstance = {
-  parseText: jest.fn().mockReturnValue({
+  parseTree: jest.fn().mockReturnValue({
     rootNode: {
       descendantForPosition: jest.fn().mockReturnValue({
         text: "test",

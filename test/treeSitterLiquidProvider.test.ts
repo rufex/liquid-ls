@@ -17,7 +17,7 @@ describe("TreeSitterLiquidProvider", () => {
 
     it("should parse text successfully", () => {
       const text = "Hello {% t 'world' %}";
-      const tree = provider.parseText(text);
+      const tree = provider.parseTree(text);
       expect(tree).toBeDefined();
       expect(tree).not.toBeNull();
     });
@@ -33,10 +33,10 @@ describe("TreeSitterLiquidProvider", () => {
       {% t= 'unused_translation' default:'This is unused' %}
     `;
 
-    let tree: ReturnType<TreeSitterLiquidProvider["parseText"]>;
+    let tree: ReturnType<TreeSitterLiquidProvider["parseTree"]>;
 
     beforeEach(() => {
-      tree = provider.parseText(sampleLiquidWithTranslations);
+      tree = provider.parseTree(sampleLiquidWithTranslations);
     });
 
     describe("findTranslationCalls", () => {
@@ -208,7 +208,7 @@ describe("TreeSitterLiquidProvider", () => {
   describe("getIncludePathAtPosition", () => {
     it("should detect include statement at cursor position", () => {
       const content = `{% include 'parts/part_1' %}`;
-      const tree = provider.parseText(content);
+      const tree = provider.parseTree(content);
 
       if (tree) {
         const includePath = provider.getIncludePathAtPosition(tree, 0, 15);
@@ -218,7 +218,7 @@ describe("TreeSitterLiquidProvider", () => {
 
     it("should return null when not on include statement", () => {
       const content = `<h1>Hello World</h1>`;
-      const tree = provider.parseText(content);
+      const tree = provider.parseTree(content);
 
       if (tree) {
         const includePath = provider.getIncludePathAtPosition(tree, 0, 5);
@@ -228,7 +228,7 @@ describe("TreeSitterLiquidProvider", () => {
 
     it("should detect include statement with different quote styles", () => {
       const content = `{% include "parts/part_1" %}`;
-      const tree = provider.parseText(content);
+      const tree = provider.parseTree(content);
 
       if (tree) {
         const includePath = provider.getIncludePathAtPosition(tree, 0, 15);
@@ -240,7 +240,7 @@ describe("TreeSitterLiquidProvider", () => {
   describe("query functionality", () => {
     it("should execute queries without errors", () => {
       const text = "{% t 'test' %}";
-      const tree = provider.parseText(text);
+      const tree = provider.parseTree(text);
 
       if (tree) {
         const queryString = "(liquid_tag) @tag";
@@ -253,7 +253,7 @@ describe("TreeSitterLiquidProvider", () => {
   describe("findNodes", () => {
     it("should find nodes by type", () => {
       const text = "{% t 'test' %}";
-      const tree = provider.parseText(text);
+      const tree = provider.parseTree(text);
 
       if (tree) {
         const nodes = provider.findNodes(tree, "liquid_tag");
@@ -265,7 +265,7 @@ describe("TreeSitterLiquidProvider", () => {
   describe("getTreeString", () => {
     it("should return tree string representation", () => {
       const text = "{% t 'test' %}";
-      const tree = provider.parseText(text);
+      const tree = provider.parseTree(text);
 
       if (tree) {
         const treeString = provider.getTreeString(tree);
@@ -338,10 +338,10 @@ describe("TreeSitterLiquidProvider", () => {
       {{ baz }}
     `;
 
-    let tree: ReturnType<TreeSitterLiquidProvider["parseText"]>;
+    let tree: ReturnType<TreeSitterLiquidProvider["parseTree"]>;
 
     beforeEach(() => {
-      tree = provider.parseText(sampleLiquidWithVariables);
+      tree = provider.parseTree(sampleLiquidWithVariables);
     });
 
     describe("findVariableDefinitions", () => {
@@ -432,7 +432,7 @@ describe("TreeSitterLiquidProvider", () => {
             {{ i }}
           {% endfor %}
         `;
-        const forTree = provider.parseText(forLoopContent);
+        const forTree = provider.parseTree(forLoopContent);
 
         if (forTree) {
           // Test 'items' in 'for i in items' at line 2
@@ -446,106 +446,13 @@ describe("TreeSitterLiquidProvider", () => {
           {% capture complex %}complex_key{% endcapture %}
           {% assign [complex] = 'Complex value' %}
         `;
-        const bracketTree = provider.parseText(bracketContent);
+        const bracketTree = provider.parseTree(bracketContent);
 
         if (bracketTree) {
           // Test 'complex' in '[complex]' at line 2
           const variable = provider.getVariableAtPosition(bracketTree, 2, 20);
           expect(variable).toBe("complex");
         }
-      });
-    });
-
-    describe("findVariableDefinitionByName", () => {
-      it("should find assignment statement definition", () => {
-        if (tree) {
-          const definition = provider.findVariableDefinitionByName(
-            tree,
-            "items",
-          );
-          expect(definition).toBeDefined();
-          expect(definition?.type).toBe("assignment_statement");
-          expect(definition?.text).toContain("assign items =");
-        }
-      });
-
-      it("should find capture statement definition", () => {
-        if (tree) {
-          const definition = provider.findVariableDefinitionByName(tree, "baz");
-          expect(definition).toBeDefined();
-          expect(definition?.type).toBe("capture_statement");
-          expect(definition?.text).toContain("capture baz");
-        }
-      });
-
-      it("should find for loop variable definition", () => {
-        if (tree) {
-          const definition = provider.findVariableDefinitionByName(tree, "i");
-          expect(definition).toBeDefined();
-          expect(definition?.type).toBe("for_loop_statement");
-          expect(definition?.text).toContain("for i in");
-        }
-      });
-
-      it("should return null for non-existent variable", () => {
-        if (tree) {
-          const definition = provider.findVariableDefinitionByName(
-            tree,
-            "nonexistent",
-          );
-          expect(definition).toBeNull();
-        }
-      });
-    });
-
-    describe("getVariableNameLocation", () => {
-      it("should return variable name node from assignment statement", () => {
-        if (tree) {
-          const definition = provider.findVariableDefinitionByName(
-            tree,
-            "items",
-          );
-          if (definition) {
-            const nameNode = provider.getVariableNameLocation(definition);
-            expect(nameNode).toBeDefined();
-            expect(nameNode?.text).toBe("items");
-            expect(nameNode?.type).toBe("identifier");
-          }
-        }
-      });
-
-      it("should return variable name node from capture statement", () => {
-        if (tree) {
-          const definition = provider.findVariableDefinitionByName(tree, "baz");
-          if (definition) {
-            const nameNode = provider.getVariableNameLocation(definition);
-            expect(nameNode).toBeDefined();
-            expect(nameNode?.text).toBe("baz");
-            expect(nameNode?.type).toBe("identifier");
-          }
-        }
-      });
-
-      it("should return variable name node from for loop statement", () => {
-        if (tree) {
-          const definition = provider.findVariableDefinitionByName(tree, "i");
-          if (definition) {
-            const nameNode = provider.getVariableNameLocation(definition);
-            expect(nameNode).toBeDefined();
-            expect(nameNode?.text).toBe("i");
-            expect(nameNode?.type).toBe("identifier");
-          }
-        }
-      });
-
-      it("should return null for unsupported node types", () => {
-        const mockNode = {
-          type: "unsupported_type",
-          childForFieldName: jest.fn(() => null),
-        } as never;
-
-        const nameNode = provider.getVariableNameLocation(mockNode);
-        expect(nameNode).toBeNull();
       });
     });
   });
@@ -557,7 +464,7 @@ describe("TreeSitterLiquidProvider", () => {
         <h1>Title</h1>
         {% include 'parts/footer' %}
       `;
-      const tree = provider.parseText(content);
+      const tree = provider.parseTree(content);
 
       if (tree) {
         const includeTags = provider.findAllIncludeTags(tree);
@@ -583,7 +490,7 @@ describe("TreeSitterLiquidProvider", () => {
         <p>Content</p>
         {% include 'shared/utilities' %}
       `;
-      const tree = provider.parseText(content);
+      const tree = provider.parseTree(content);
 
       if (tree) {
         const includeTags = provider.findAllIncludeTags(tree);
@@ -609,7 +516,7 @@ describe("TreeSitterLiquidProvider", () => {
         {% include 'shared/utilities' %}
         {% include 'parts/content' %}
       `;
-      const tree = provider.parseText(content);
+      const tree = provider.parseTree(content);
 
       if (tree) {
         const includeTags = provider.findAllIncludeTags(tree);
@@ -637,7 +544,7 @@ describe("TreeSitterLiquidProvider", () => {
 
     it("should handle double quotes in include paths", () => {
       const content = `{% include "parts/header" %}`;
-      const tree = provider.parseText(content);
+      const tree = provider.parseTree(content);
 
       if (tree) {
         const includeTags = provider.findAllIncludeTags(tree);
@@ -653,7 +560,7 @@ describe("TreeSitterLiquidProvider", () => {
 
     it("should handle include paths without prefixes", () => {
       const content = `{% include 'simple_include' %}`;
-      const tree = provider.parseText(content);
+      const tree = provider.parseTree(content);
 
       if (tree) {
         const includeTags = provider.findAllIncludeTags(tree);
@@ -672,7 +579,7 @@ describe("TreeSitterLiquidProvider", () => {
         <h1>Title</h1>
         <p>No includes here</p>
       `;
-      const tree = provider.parseText(content);
+      const tree = provider.parseTree(content);
 
       if (tree) {
         const includeTags = provider.findAllIncludeTags(tree);
@@ -689,7 +596,7 @@ describe("TreeSitterLiquidProvider", () => {
         Line 4
         {% include 'parts/third' %}
       `;
-      const tree = provider.parseText(content);
+      const tree = provider.parseTree(content);
 
       if (tree) {
         const includeTags = provider.findAllIncludeTags(tree);
@@ -712,7 +619,7 @@ describe("TreeSitterLiquidProvider", () => {
         {% include 'parts/nested/deep/file' %}
         {% include 'shared/complex_name_with_underscores' %}
       `;
-      const tree = provider.parseText(content);
+      const tree = provider.parseTree(content);
 
       if (tree) {
         const includeTags = provider.findAllIncludeTags(tree);
@@ -742,7 +649,7 @@ describe("TreeSitterLiquidProvider", () => {
           {% include 'parts/item_template' %}
         {% endfor %}
       `;
-      const tree = provider.parseText(content);
+      const tree = provider.parseTree(content);
 
       if (tree) {
         const includeTags = provider.findAllIncludeTags(tree);
@@ -763,7 +670,7 @@ describe("TreeSitterLiquidProvider", () => {
     });
 
     it("should handle empty tree gracefully", () => {
-      const tree = provider.parseText("");
+      const tree = provider.parseTree("");
 
       if (tree) {
         const includeTags = provider.findAllIncludeTags(tree);
@@ -776,7 +683,7 @@ describe("TreeSitterLiquidProvider", () => {
     describe("getTagIdentifierAtPosition", () => {
       it("should detect 'unreconciled' tag identifier at cursor position", () => {
         const text = "{% unreconciled value unreconciled_text:text %}";
-        const tree = provider.parseText(text);
+        const tree = provider.parseTree(text);
 
         if (tree) {
           // Position cursor on 'unreconciled' (position 3-14)
@@ -787,7 +694,7 @@ describe("TreeSitterLiquidProvider", () => {
 
       it("should detect 'result' tag identifier at cursor position", () => {
         const text = "{% result 'accounts.current_year' %}";
-        const tree = provider.parseText(text);
+        const tree = provider.parseTree(text);
 
         if (tree) {
           // Position cursor on 'result'
@@ -798,7 +705,7 @@ describe("TreeSitterLiquidProvider", () => {
 
       it("should return null when cursor is not on tag identifier", () => {
         const text = "{% unreconciled value unreconciled_text:text %}";
-        const tree = provider.parseText(text);
+        const tree = provider.parseTree(text);
 
         if (tree) {
           // Position cursor on 'value' (not the tag identifier)
@@ -813,7 +720,7 @@ describe("TreeSitterLiquidProvider", () => {
 
       it("should return null when not inside a liquid_tag", () => {
         const text = "This is plain text with unreconciled word";
-        const tree = provider.parseText(text);
+        const tree = provider.parseTree(text);
 
         if (tree) {
           // Position cursor on 'unreconciled' in plain text
@@ -829,7 +736,7 @@ describe("TreeSitterLiquidProvider", () => {
       it("should handle complex tag structures", () => {
         const text =
           "{% unreconciled accounts.current_year unreconciled_text:'Some text here' custom:true %}";
-        const tree = provider.parseText(text);
+        const tree = provider.parseTree(text);
 
         if (tree) {
           // Position cursor on 'unreconciled'
@@ -845,7 +752,7 @@ describe("TreeSitterLiquidProvider", () => {
         ];
 
         texts.forEach((text) => {
-          const tree = provider.parseText(text);
+          const tree = provider.parseTree(text);
           if (tree) {
             // Position cursor on the tag identifier
             const tagIdentifier = provider.getTagIdentifierAtPosition(
@@ -861,7 +768,7 @@ describe("TreeSitterLiquidProvider", () => {
 
       it("should return null for translation expressions", () => {
         const text = "{% t 'translation_key' %}";
-        const tree = provider.parseText(text);
+        const tree = provider.parseTree(text);
 
         if (tree) {
           // Position cursor on 't' - this is a translation expression, not a regular tag
@@ -876,7 +783,7 @@ describe("TreeSitterLiquidProvider", () => {
   accounts.current_year
   unreconciled_text:'Text'
 %}`;
-        const tree = provider.parseText(text);
+        const tree = provider.parseTree(text);
 
         if (tree) {
           // Position cursor on 'unreconciled' in second line
@@ -887,7 +794,7 @@ describe("TreeSitterLiquidProvider", () => {
 
       it("should be precise with cursor positioning", () => {
         const text = "{% unreconciled value %}";
-        const tree = provider.parseText(text);
+        const tree = provider.parseTree(text);
 
         if (tree) {
           // Test different positions within the tag identifier
@@ -905,7 +812,7 @@ describe("TreeSitterLiquidProvider", () => {
       });
 
       it("should handle edge cases", () => {
-        const tree = provider.parseText("");
+        const tree = provider.parseTree("");
         if (tree) {
           const tagIdentifier = provider.getTagIdentifierAtPosition(tree, 0, 0);
           expect(tagIdentifier).toBeNull();
@@ -916,7 +823,7 @@ describe("TreeSitterLiquidProvider", () => {
     describe("tag detection helper methods", () => {
       it("should correctly identify liquid statement context", () => {
         const text = "{% unreconciled value %} plain text";
-        const tree = provider.parseText(text);
+        const tree = provider.parseTree(text);
 
         if (tree) {
           // Test positions inside and outside liquid statement
@@ -940,7 +847,7 @@ describe("TreeSitterLiquidProvider", () => {
 
       it("should find tag identifier within liquid statement", () => {
         const text = "{% result 'account' %}";
-        const tree = provider.parseText(text);
+        const tree = provider.parseTree(text);
 
         if (tree) {
           const statementNode = tree.rootNode.descendantForPosition({
