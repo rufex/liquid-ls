@@ -1,5 +1,9 @@
 import { URI } from "vscode-uri";
-import { TemplateTypes, TemplateDirectories, TemplateUriInfo } from "../types";
+import {
+  TemplateTypes,
+  TemplateDirectories,
+  TemplateUriInfo,
+} from "../templates/types";
 
 /**
  * Parses a template URI to extract comprehensive template information
@@ -57,7 +61,10 @@ export function parseTemplateUri(uri: string): TemplateUriInfo | null {
         const fileName = pathSegments[pathSegments.length - 1];
 
         // Check if it's a main template file: template_dir/template_name/main.liquid
-        if (fileName === "main.liquid" && pathSegments.length === dirIndex + 3) {
+        if (
+          fileName === "main.liquid" &&
+          pathSegments.length === dirIndex + 3
+        ) {
           return {
             templateType: templateType as TemplateTypes,
             templateName: templateName,
@@ -103,4 +110,3 @@ export function parseTemplateUri(uri: string): TemplateUriInfo | null {
 export function isTemplateUri(uri: string): boolean {
   return parseTemplateUri(uri) !== null;
 }
-

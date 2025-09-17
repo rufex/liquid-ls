@@ -23,3 +23,12 @@ export const LiquidNodeTagNames = {
 
 export type LiquidTagName =
   (typeof LiquidNodeTagNames)[keyof typeof LiquidNodeTagNames];
+
+/**
+ * Information about an include tag found in the document
+ */
+export interface IncludeTagInfo {
+  type: "textPart" | "sharedPart";
+  name: string;
+  lineNumber: number;
+}

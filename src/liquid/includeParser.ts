@@ -1,7 +1,7 @@
 import * as Parser from "tree-sitter";
 import * as LiquidTreeSitter from "tree-sitter-liquid";
 import { Logger } from "../logger";
-import { IncludeTagInfo } from "../types";
+import { IncludeTagInfo } from "../liquid/types";
 
 export class IncludeParser {
   private parser: Parser;

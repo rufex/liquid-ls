@@ -2,7 +2,7 @@ import { Logger } from "../logger";
 import { DefinitionParams, Location } from "vscode-languageserver/node";
 import { TemplatePartsCollectionManager } from "../templates/templatePartsCollectionManager";
 import { parseTemplateUri } from "../utils/templateUriParser";
-import { TemplateParts, TemplateUriInfo } from "../types";
+import { TemplateParts, TemplateUriInfo } from "../templates/types";
 
 type TypeRequest = "include" | "variable" | "translation" | "unknown";
 

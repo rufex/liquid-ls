@@ -6,10 +6,10 @@ import { IncludeParser } from "../liquid/includeParser";
 import {
   TemplateTypes,
   TemplateParts,
-  IncludeTagInfo,
   TemplatePartType,
   TemplateDirectories,
-} from "../types";
+} from "./types";
+import { IncludeTagInfo } from "../liquid/types";
 
 /**
  * Class to map out the parts of a Liquid template, including main, text parts, and shared parts.

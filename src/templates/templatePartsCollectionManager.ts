@@ -5,7 +5,7 @@ import {
   TemplateParts,
   TemplateKey,
   TemplateCollection,
-} from "../types";
+} from "./types";
 
 /**
  * Singleton class that manages a collection of template parts mappings.

@@ -1,7 +1,7 @@
 import { Logger } from "../logger";
 import * as Parser from "tree-sitter";
 import { TreeSitterLiquidProvider } from "./treeSitterLiquidProvider";
-import { TemplateParts } from "../types";
+import { TemplateParts } from "../templates/types";
 import * as fs from "fs";
 import { TemplatePartsCollectionManager } from "../templates/templatePartsCollectionManager";
 import { parseTemplateUri } from "../utils/templateUriParser";
