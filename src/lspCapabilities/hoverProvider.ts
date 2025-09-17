@@ -3,7 +3,7 @@ import { Logger } from "../logger";
 import { HoverParams } from "vscode-languageserver/node";
 import { URI } from "vscode-uri";
 import * as fs from "fs";
-import { TranslationProvider } from "../liquid/translationProvider";
+import { TranslationProvider } from "./translationProvider";
 import { LiquidTagIdentifier } from "../liquid/liquidTagIdentifier";
 import { LiquidTagFinder } from "../liquid/liquidTagFinder";
 
