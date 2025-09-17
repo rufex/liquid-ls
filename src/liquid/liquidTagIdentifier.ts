@@ -102,6 +102,23 @@ export class LiquidTagIdentifier {
     return null;
   }
 
+  /**
+   * Extracts the key from a Liquid node, if present.
+   * Looks for a child node with the field name "key" and returns its text content.
+   *
+   * @param liquidNode - The Liquid syntax node to extract the key from
+   * @returns The extracted key as a string, or null if not found
+   */
+  public identifyNodeKey(liquidNode: Parser.SyntaxNode): string | null {
+    const keyNode = liquidNode.childForFieldName("key");
+    if (keyNode && keyNode.type === "string") {
+      const text = keyNode.text;
+      return text.replace(/^['"]|['"]$/g, "");
+    }
+    this.logger.warn("Key not found in liquidNode");
+    return null;
+  }
+
   private isValidNodeType(type: string): type is LiquidNodeType {
     return Object.values(LiquidNodeTypes).includes(type as LiquidNodeType);
   }
