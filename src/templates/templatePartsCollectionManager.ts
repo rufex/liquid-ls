@@ -1,5 +1,7 @@
 import { Logger } from "../logger";
 import { TemplatePartsMapper } from "./templatePartsMapper";
+import { URI } from "vscode-uri";
+import { parseTemplateUri } from "../utils/templateUriParser";
 import {
   TemplateTypes,
   TemplateParts,
@@ -115,6 +117,49 @@ export class TemplatePartsCollectionManager {
   }
 
   /**
+   * Gets a template's parts mapping based on a document URI.
+   * The URI is parsed to extract the template type and name.
+   * If the template is not in the collection, it will be loaded automatically.
+   * @param textDocumentUri The document URI containing template info
+   * @returns Promise resolving to the template parts or null if not found/loadable
+   */
+  public async getMapAndIndexFromUri(
+    textDocumentUri: string,
+    currentLine: number,
+  ): Promise<{
+    templateParts: TemplateParts;
+    currentFileIndex: number;
+  } | null> {
+    const templateUriInfo = parseTemplateUri(textDocumentUri);
+    if (!templateUriInfo) {
+      this.logger.warn(`Could not parse template URI: ${textDocumentUri}`);
+      return null;
+    }
+
+    const parts = await this.getMap(
+      templateUriInfo.templateType,
+      templateUriInfo.templateName,
+    );
+
+    if (!parts) {
+      this.logger.warn(
+        `No template parts found for URI: ${textDocumentUri} (type: ${templateUriInfo.templateType}, name: ${templateUriInfo.templateName})`,
+      );
+      return null;
+    }
+
+    const index = this.findCurrentFileIndex(
+      parts,
+      textDocumentUri,
+      currentLine,
+    );
+    return {
+      templateParts: parts,
+      currentFileIndex: index,
+    };
+  }
+
+  /**
    * Generates the template key from template type and name
    * @param templateType The type of template
    * @param templateName The name of the template
@@ -125,5 +170,36 @@ export class TemplatePartsCollectionManager {
     templateName: string,
   ): TemplateKey {
     return `${templateType}/${templateName}`;
+  }
+
+  /**
+   * Finds the index of the current file in the template parts array.
+   * If the exact file and line match is not found, returns the last matching file index.
+   * @param templateParts The array of template parts
+   * @param currentFilePath The full path of the current file
+   * @param currentLine The current line number (0-based)
+   * @returns The index of the current file in the template parts array, or -1 if not found
+   */
+  private findCurrentFileIndex(
+    templateParts: TemplateParts,
+    textDocumentUri: string,
+    currentLine: number,
+  ): number {
+    const currentFilePath = URI.parse(textDocumentUri).fsPath;
+    let lastMatchingIndex = -1;
+
+    for (let i = 0; i < templateParts.length; i++) {
+      if (templateParts[i].fileFullPath === currentFilePath) {
+        if (
+          currentLine >= templateParts[i].startLine &&
+          currentLine <= templateParts[i].endLine
+        ) {
+          return i;
+        }
+        lastMatchingIndex = i;
+      }
+    }
+
+    return lastMatchingIndex;
   }
 }

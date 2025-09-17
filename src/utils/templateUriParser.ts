@@ -96,6 +96,7 @@ export function parseTemplateUri(uri: string): TemplateUriInfo | null {
     }
 
     return null;
+    //eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (error) {
     // Invalid URI format
     return null;

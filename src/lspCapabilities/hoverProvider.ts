@@ -8,11 +8,11 @@ import { LiquidTagIdentifier } from "../liquid/liquidTagIdentifier";
 import { LiquidTagFinder } from "../liquid/liquidTagFinder";
 
 export class HoverProvider {
+  private workspaceRoot: string | null;
   private textDocumentUri: HoverParams["textDocument"]["uri"];
   private position: HoverParams["position"];
   private logger: Logger;
   private documentationProvider: DocumentationProvider;
-  private workspaceRoot: string | null;
 
   constructor(params: HoverParams, workspaceRoot?: string | null) {
     this.workspaceRoot = workspaceRoot || null;
@@ -60,7 +60,6 @@ export class HoverProvider {
         const finder = new LiquidTagFinder();
         const nodes = await finder.findAllNodesBeforePosition(
           this.textDocumentUri,
-          filePath,
           this.position.line,
           translationKey,
           "translation_statement",
