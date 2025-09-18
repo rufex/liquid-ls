@@ -62,7 +62,7 @@ export class HoverProvider {
           this.textDocumentUri,
           this.position.line,
           translationKey,
-          "translation_statement",
+          ["translation_statement"],
           this.workspaceRoot,
         );
         if (!nodes) {

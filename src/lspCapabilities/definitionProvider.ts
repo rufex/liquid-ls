@@ -112,7 +112,7 @@ export class DefinitionProvider {
         this.textDocumentUri,
         this.position.line,
         nodeKey,
-        searchFor,
+        [searchFor],
         this.workspaceRoot,
       );
       if (!nodes) {

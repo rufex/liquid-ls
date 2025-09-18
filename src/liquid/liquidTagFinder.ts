@@ -19,7 +19,7 @@ export class LiquidTagFinder {
     textDocumentUri: string,
     currentRow: number,
     liquidKey: string,
-    liquidType: string,
+    liquidTypes: string[],
     workspaceRoot: string,
   ): Promise<NodeInTemplate[] | null> {
     const templateManager =
@@ -47,7 +47,7 @@ export class LiquidTagFinder {
 
       try {
         const fileContent = fs.readFileSync(part.fileFullPath, "utf8");
-        const nodes = this.findNodesInText(fileContent, liquidKey, liquidType);
+        const nodes = this.findNodesInText(fileContent, liquidKey, liquidTypes);
 
         if (i === currentFileIndex) {
           for (const node of nodes) {
@@ -71,42 +71,52 @@ export class LiquidTagFinder {
   private findNodesInText(
     text: string,
     liquidKey: string,
-    liquidType: string,
+    liquidTypes: string[],
   ): Parser.SyntaxNode[] {
     const tree = this.parser.parseTree(text);
     if (!tree) {
       return [];
     }
 
+    const keyKey = "key";
     const matchingNodes: Parser.SyntaxNode[] = [];
 
-    const queryString = `
-      (${liquidType}
-        key: (string) @key
-      )
-    `;
-
     try {
-      const matches = this.parser.queryTree(queryString, tree);
+      for (const liquidType of liquidTypes) {
+        // Example query:
+        // (translation_statement
+        //  key: (string) @key
+        //  )
+        //  (assignment_statement
+        //  variable_name: (string) @key
+        //  )
+        const queryString = `(${liquidType}
+          ${keyKey}: (string) @${keyKey}
+        )`;
 
-      for (const match of matches) {
-        for (const capture of match.captures) {
-          if (capture.name === "key") {
-            const captureKey = this.extractKey(capture.node);
-            if (captureKey === liquidKey) {
-              let parent = capture.node.parent;
-              while (parent && parent.type !== liquidType) {
-                parent = parent.parent;
-              }
-              if (parent) {
-                matchingNodes.push(parent);
+        const matches = this.parser.queryTree(queryString, tree);
+
+        for (const match of matches) {
+          for (const capture of match.captures) {
+            if (capture.name === "key") {
+              const captureKey = this.extractKey(capture.node);
+              if (captureKey === liquidKey) {
+                let parent = capture.node.parent;
+                while (parent && parent.type !== liquidType) {
+                  parent = parent.parent;
+                }
+                if (parent) {
+                  matchingNodes.push(parent);
+                }
               }
             }
           }
         }
       }
     } catch (error) {
-      this.logger.error(`Error querying for ${liquidType}: ${error}`);
+      this.logger.error(
+        `Error querying for ${liquidTypes.concat(", ")}: ${error}`,
+      );
     }
 
     return matchingNodes;
