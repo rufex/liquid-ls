@@ -9,6 +9,7 @@ export const LiquidNodeTypes = {
   LiquidTag: "liquid_tag",
   CustomUnpairedStatement: "custom_unpaired_statement",
   IncludeStatement: "include_statement",
+  ResultStatement: "result_statement",
 } as const;
 
 export type LiquidNodeType =
