@@ -5,6 +5,7 @@
     "debug:mapper": "tsc && node out/debugScripts/templateMapperDebug.js",
     "debug:collection": "tsc && node out/debugScripts/templatePartsCollectionManagerDebug.js",
     "debug:tagidentifier": "tsc && node out/debugScripts/liquidTagIdentifierDebug.js",
+    "debug:tree": "tsc && node out/debugScripts/dumpTreeSitterTree.js",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
