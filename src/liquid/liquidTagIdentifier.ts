@@ -67,15 +67,13 @@ export class LiquidTagIdentifier {
    * @param column - Zero-based column number of the position to check
    * @returns The tag name if found, or null otherwise
    */
-  public identifyTagName(
-    liquidNode: Parser.SyntaxNode,
-  ): LiquidTagName | string | null {
+  public identifyTagName(liquidNode: Parser.SyntaxNode): LiquidTagName | null {
     return this.extractTagNameFromNode(liquidNode);
   }
 
   private extractTagNameFromNode(
     liquidNode: Parser.SyntaxNode,
-  ): LiquidTagName | string | null {
+  ): LiquidTagName | null {
     if (
       liquidNode.type in LiquidNodeTagNames &&
       this.isTagNameType(liquidNode.type)
@@ -91,7 +89,7 @@ export class LiquidTagIdentifier {
     if (liquidNode.type === "custom_unpaired_statement") {
       for (const child of liquidNode.children) {
         if (child.type === "custom_keyword") {
-          const tagName = child.text.trim();
+          const tagName = child.text.trim() as LiquidTagName;
           this.logger.info(`Extracted custom tag name: ${tagName}`);
 
           return tagName;

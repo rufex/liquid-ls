@@ -1,6 +1,7 @@
 import { Logger } from "../logger";
 import * as fs from "fs";
 import * as path from "path";
+import { LiquidTagName } from "../liquid/types";
 
 export class DocumentationProvider {
   private logger: Logger;
@@ -20,7 +21,7 @@ export class DocumentationProvider {
    * @param tagName The name of the tag to get hover content for
    * @returns Markdown content if available, null otherwise
    */
-  getTagHoverContent(tagName: string): string | null {
+  getTagHoverContent(tagName: LiquidTagName): string | null {
     const documentation = this.getTagDocumentation(tagName);
 
     if (documentation && documentation.trim().length > 0) {
