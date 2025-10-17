@@ -51,14 +51,21 @@ export class LiquidTagFinder {
         const fileContent = fs.readFileSync(part.fileFullPath, "utf8");
         const nodes = this.findNodesInText(fileContent, liquidKey, liquidTypes);
 
+        // Filter nodes that are within this part's line range
+        const nodesInRange = nodes.filter(
+          (node) =>
+            node.startPosition.row >= part.startLine &&
+            node.endPosition.row <= part.endLine,
+        );
+
         if (i === currentFileIndex) {
-          for (const node of nodes) {
+          for (const node of nodesInRange) {
             if (node.startPosition.row < currentRow) {
               matchingNodes.push({ node, templatePart: part });
             }
           }
         } else {
-          nodes.forEach((node) =>
+          nodesInRange.forEach((node) =>
             matchingNodes.push({ node, templatePart: part }),
           );
         }
@@ -167,14 +174,21 @@ export class LiquidTagFinder {
           variableName,
         );
 
+        // Filter nodes that are within this part's line range
+        const nodesInRange = nodes.filter(
+          (node) =>
+            node.startPosition.row >= part.startLine &&
+            node.endPosition.row <= part.endLine,
+        );
+
         if (i === currentFileIndex) {
-          for (const node of nodes) {
+          for (const node of nodesInRange) {
             if (node.startPosition.row < currentRow) {
               matchingNodes.push({ node, templatePart: part });
             }
           }
         } else {
-          nodes.forEach((node) =>
+          nodesInRange.forEach((node) =>
             matchingNodes.push({ node, templatePart: part }),
           );
         }
