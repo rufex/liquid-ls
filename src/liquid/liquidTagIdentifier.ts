@@ -265,10 +265,21 @@ export class LiquidTagIdentifier {
       case "push_statement":
       case "pop_statement":
         // {% push item_var to:array_var %} or {% pop item_var to:array_var %}
-        // The 'array' field is a variable reference
         // array_var -> array
         // item_var -> item
-        return fieldName === "array";
+        return fieldName === "array" || fieldName === "item";
+
+      case "filter":
+        // {{ var | filter_name }} or {% assign x = var | filter_name %}
+        // The 'body' field is a variable reference
+        // var -> body
+        return fieldName === "body";
+
+      case "argument_list":
+        // {{ var | filter_name:arg_var }} or {% assign x = var | filter_name:arg_var %}
+        // Identifiers in argument_list are variable references
+        // arg_var -> (identifier) in argument_list
+        return true;
 
       default:
         // For other contexts, we might want to expand this in the future

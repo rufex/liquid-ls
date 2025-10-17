@@ -81,7 +81,6 @@ export class LiquidLanguageServer {
     });
 
     this.connection.onDefinition(async (params): Promise<Definition | null> => {
-      this.logger.logRequest("onDefinition", params);
       this.connection.console.log(
         `Definition request for: ${params.textDocument.uri}`,
       );

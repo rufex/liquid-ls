@@ -165,18 +165,39 @@ export class DefinitionProvider {
       return null;
     }
 
-    // TODO: Implement variable lookup definition
-    // Find all variable definitions before the current position
-    // const searchFor = ["assignment_statement", "capture_statement"];
-    // const finder = new LiquidTagFinder();
-    // const nodes = await finder.findAllVariableDefinitionsBeforePosition(
-    //   this.textDocumentUri,
-    //   this.position.line,
-    //   variableName,
-    //   searchFor,
-    //   this.workspaceRoot,
-    // );
+    const finder = new LiquidTagFinder();
+    const nodes = await finder.findAllVariableDefinitionsBeforePosition(
+      this.textDocumentUri,
+      this.position.line,
+      variableName,
+      this.workspaceRoot,
+    );
 
-    return null;
+    if (!nodes || nodes.length === 0) {
+      this.logger.debug(`No variable definitions found for: ${variableName}`);
+      return null;
+    }
+
+    // Return all nodes
+    const locations: Location[] = nodes.map((node) => {
+      return {
+        uri: URI.file(node.templatePart.fileFullPath).toString(),
+        range: {
+          start: {
+            line: node.node.startPosition.row,
+            character: node.node.startPosition.column,
+          },
+          end: {
+            line: node.node.endPosition.row,
+            character: node.node.endPosition.column,
+          },
+        },
+      };
+    });
+
+    this.logger.debug(
+      `Found ${locations.length} definitions for variable: ${variableName}`,
+    );
+    return locations;
   }
 }
