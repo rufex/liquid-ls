@@ -42,23 +42,32 @@ export class DefinitionProvider {
       this.position.line,
       this.position.character,
     );
-    if (!liquidNode) {
-      this.logger.debug("No Liquid node identified at cursor position");
-      return null;
+
+    if (liquidNode) {
+      // INCLUDE TAG
+      if (liquidNode.type === "include_statement") {
+        return this.handleIncludeTag(liquidNode);
+      }
+
+      // TRANSLATION TAG
+      if (liquidNode.type === "translation_expression") {
+        return this.handleTranslationTag(liquidNode);
+      }
     }
 
-    // INCLUDE TAG
-    if (liquidNode.type === "include_statement") {
-      return this.handleIncludeTag(liquidNode);
-    }
+    // VARIABLE
+    const variableNode = identifier.identifyVariable(
+      fileContent,
+      this.position.line,
+      this.position.character,
+    );
 
-    // TRANSLATION TAG
-    if (liquidNode.type === "translation_expression") {
-      return this.handleTranslationTag(liquidNode);
+    if (variableNode) {
+      return this.handleVariable(variableNode);
     }
 
     this.logger.debug(
-      `No definition handler for node type: ${liquidNode.type}`,
+      `No definition handler for node type: ${liquidNode?.type || "unknown"}`,
     );
     return null;
   }
@@ -143,6 +152,31 @@ export class DefinitionProvider {
     }
 
     this.logger.warn("No definition found for translation tag");
+    return null;
+  }
+
+  private async handleVariable(
+    liquidNode: Parser.SyntaxNode,
+  ): Promise<Location[] | null> {
+    const variableName = liquidNode.text;
+    this.logger.debug(`Looking for variable definitions: ${variableName}`);
+
+    if (!variableName || !this.workspaceRoot) {
+      return null;
+    }
+
+    // TODO: Implement variable lookup definition
+    // Find all variable definitions before the current position
+    // const searchFor = ["assignment_statement", "capture_statement"];
+    // const finder = new LiquidTagFinder();
+    // const nodes = await finder.findAllVariableDefinitionsBeforePosition(
+    //   this.textDocumentUri,
+    //   this.position.line,
+    //   variableName,
+    //   searchFor,
+    //   this.workspaceRoot,
+    // );
+
     return null;
   }
 }

@@ -9,7 +9,7 @@ export class IncludeParser {
   private logger: Logger;
 
   constructor() {
-    this.logger = new Logger("TranslationParser");
+    this.logger = new Logger("IncludeParser");
     try {
       this.parser = new Parser();
       this.language = LiquidTreeSitter as Parser.Language;

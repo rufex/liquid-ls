@@ -40,6 +40,8 @@ export class LiquidTagFinder {
       return null;
     }
 
+    this.logger.info("Parts identified: " + templateParts.length);
+
     const matchingNodes: NodeInTemplate[] = [];
 
     for (let i = 0; i <= currentFileIndex; i++) {
