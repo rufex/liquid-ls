@@ -21,9 +21,7 @@ import {
  */
 export class TemplatePartsCollectionManager {
   private static instance: TemplatePartsCollectionManager | null = null;
-  private logger: Logger = new Logger("TemplatePartsCollectionManager", {
-    consoleLog: true,
-  });
+  private logger: Logger = new Logger("TemplatePartsCollectionManager");
   private loadedMaps: TemplateCollection = new Map();
   private templatePartsMapper: TemplatePartsMapper;
 

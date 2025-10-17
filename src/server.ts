@@ -26,12 +26,26 @@ export class LiquidLanguageServer {
 
   constructor(connection?: Connection) {
     this.connection = connection || createConnection(ProposedFeatures.all);
+
     this.logger = new Logger("LiquidLanguageServer");
     this.setupHandlers();
   }
 
   private setupHandlers(): void {
     this.connection.onInitialize((params: InitializeParams) => {
+      // Update log level from initialization options if provided
+      const initOptions = params.initializationOptions as
+        | { logLevel?: string }
+        | undefined;
+
+      const logLevel = initOptions?.logLevel || "info";
+      Logger.configure({
+        level: logLevel,
+      });
+      this.logger.info(`Log level set to: ${logLevel}`);
+
+      this.logger.info("Server initializing");
+
       if (params.rootUri) {
         this.workspaceRoot = URI.parse(params.rootUri).fsPath;
         this.logger.info(`Workspace root: ${this.workspaceRoot}`);

@@ -31,9 +31,7 @@ import { IncludeTagInfo } from "../liquid/types";
  *  ]
  */
 export class TemplatePartsMapper {
-  private logger: Logger = new Logger("TemplatePartsMapper", {
-    consoleLog: true,
-  });
+  private logger: Logger = new Logger("TemplatePartsMapper");
   private workspaceRoot!: string;
   private parser: TreeSitterLiquidProvider = new TreeSitterLiquidProvider();
 
