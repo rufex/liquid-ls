@@ -281,6 +281,12 @@ export class LiquidTagIdentifier {
         // arg_var -> (identifier) in argument_list
         return true;
 
+      case "predicate":
+        // {% if var1 == var2 %} or {% unless var1 != var2 %}
+        // Both 'left' and 'right' fields are variable references
+        // var1 -> left, var2 -> right
+        return fieldName === "left" || fieldName === "right";
+
       default:
         // For other contexts, we might want to expand this in the future
         // For now, return false for unknown contexts
